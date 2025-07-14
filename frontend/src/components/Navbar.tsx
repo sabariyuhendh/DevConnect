@@ -56,9 +56,9 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-foreground ${
+                className={`text-sm font-medium transition-all duration-300 hover:text-foreground ${
                   isActive(item.href) 
-                    ? 'text-foreground border-b-2 border-foreground pb-4' 
+                    ? 'text-foreground drop-shadow-[0_0_8px_hsl(var(--primary))]' 
                     : 'text-muted-foreground'
                 }`}
               >
