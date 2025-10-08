@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { RequestHandler } from 'express';
 
 // Security middleware configuration
 export const securityMiddleware = [

@@ -71,9 +71,4 @@ export const dynamicRateLimiter = (req: Request, res: Response, next: NextFuncti
 
 // Implementation removed — rate limit middleware to be reimplemented by the user.
 
-export const globalRateLimiter = { handler: (_req: any, _res: any, next: any) => next() };
-export const authRateLimiter = { handler: (_req: any, _res: any, next: any) => next() };
-export const apiRateLimiter = { handler: (_req: any, _res: any, next: any) => next() };
-export const uploadRateLimiter = { handler: (_req: any, _res: any, next: any) => next() };
-
 export const rateLimit = (_req: any, _res: any, next: any) => next();
