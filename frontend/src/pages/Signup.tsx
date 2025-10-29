@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +23,53 @@ const Signup = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const [checking, setChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
+
+  useEffect(() => {
+    const username = formData.username?.trim();
+    if (!username) {
+      setUsernameAvailable(null);
+      setChecking(false);
+      return;
+    }
+
+    let mounted = true;
+    const controller = new AbortController();
+    setChecking(true);
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/check-username?username=${encodeURIComponent(username)}`, {
+          signal: controller.signal
+        });
+        if (!mounted) return;
+        if (!res.ok) {
+          setUsernameAvailable(null);
+        } else {
+          const data = await res.json();
+          setUsernameAvailable(Boolean(data.available));
+        }
+      } catch {
+        if (mounted) setUsernameAvailable(null);
+      } finally {
+        if (mounted) setChecking(false);
+      }
+    }, 400);
+
+    return () => {
+      mounted = false;
+      controller.abort();
+      clearTimeout(id);
+    };
+  // Only watch username field
+  }, [formData.username]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,17 +92,73 @@ const Signup = () => {
       return;
     }
 
+    if (!formData.username?.trim()) {
+      toast({
+        title: "Username required",
+        description: "Please choose a username.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (usernameAvailable === false) {
+      toast({
+        title: "Username taken",
+        description: "Please choose a different username.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          username: formData.username,
+          password: formData.password
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw err;
+      }
+
+      const data = await res.json();
+
+      // Persist username/token to localStorage so AuthContext (if mounted) can pick it up.
+      // This avoids calling useAuth when AuthProvider might not be mounted and prevents render errors.
+      try {
+        const userObj = {
+          id: data.user?.id || undefined,
+          email: data.user?.email || formData.email,
+          username: data.user?.username || formData.username,
+          token: data.token || undefined
+        };
+        localStorage.setItem('dc_user', JSON.stringify(userObj));
+      } catch {
+        // ignore localStorage errors
+      }
+
       toast({
         title: "Welcome to DevConnect!",
         description: "Your account has been created successfully.",
       });
       navigate('/feed');
-    }, 1000);
+    } catch (err: any) {
+      toast({
+        title: "Signup failed",
+        description: err?.message || 'Unable to create account. Please try again later.',
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const passwordRequirements = [
@@ -127,6 +223,31 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  name="username"
+                  placeholder="your-username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                />
+                <div className="text-xs mt-1">
+                  {checking ? (
+                    <span className="text-muted-foreground">Checking username...</span>
+                  ) : formData.username ? (
+                    usernameAvailable ? (
+                      <span className="text-green-600">Username available</span>
+                    ) : (
+                      <span className="text-red-600">Username taken</span>
+                    )
+                  ) : (
+                    <span className="text-muted-foreground">Pick a unique username</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -209,7 +330,7 @@ const Signup = () => {
                 </label>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || checking || usernameAvailable === false}>
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </form>
