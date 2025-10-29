@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../src/config/database';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/env';
+import { JWT_SECRET } from '../src/config/env';
 import { AppError } from '../src/utils/errors';
 
 // Extend Express Request type to include user
