@@ -8,28 +8,119 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
-  name           String?
-  username       String         @unique
-  password       String?
+  // Identification & Authentication
+  id            String  @id @default(cuid())
+  email         String  @unique
+  emailVerified Boolean @default(false)
+  firstName     String?
+  lastName      String?
+  username      String  @unique
+  password      String?
+  provider      String? // "local" | "google" | "github"
+
+  // Profile Information
   bio            String?
+  title          String? // Job title (e.g., "Senior Full Stack Developer")
+  company        String? // Company name
   location       String?
   website        String?
   github         String?
   linkedin       String?
+  phone          String?
   profilePicture String?
   coverPicture   String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  posts          Post[]
-  comments       Comment[]
-  likes          Like[]         @relation("UserLikes")
-  sessions       Session[]
-  refreshTokens  RefreshToken[]
-  followers      Follow[]       @relation("FollowedBy")
-  following      Follow[]       @relation("Following")
+
+  // Localization
+  timezone String? @default("UTC")
+  locale   String? @default("en")
+
+  // Account Status & Security
+  isActive   Boolean @default(true)
+  isVerified Boolean @default(false)
+
+  // Chat & Online Status
+  isOnline Boolean   @default(false)
+  lastSeen DateTime?
+
+  // Analytics
+  profileViews Int @default(0)
+
+  // User Preferences (stored as JSON for flexibility)
+  preferences Json? // { notifications: {...}, privacy: {...}, theme: {...} }
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]         @relation("UserLikes")
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+  followers     Follow[]       @relation("FollowedBy")
+  following     Follow[]       @relation("Following")
+
+  // Performance Indexes
+  @@index([email])
+  @@index([username])
+  @@index([isOnline])
+  @@index([lastSeen])
+  @@index([createdAt])
+  @@index([isActive])
 }
 
+// Placeholder models - to be fully implemented later
+// These minimal models allow the schema to validate while maintaining relations
 
-// Implementation removed — Prisma schema to be reimplemented by the user.
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String // User who is following
+  followingId String // User being followed
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
