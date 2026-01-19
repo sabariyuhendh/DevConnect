@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
-import { NODE_ENV, CORS_ORIGIN } from './config/env';
+import { NODE_ENV, CORS_ORIGIN } from './src/config/env';
 import { AppError } from './src/utils/errors';
 
 // Load environment variables
@@ -16,11 +16,11 @@ const prisma = new PrismaClient({
 });
 
 // Import routes
-import authRoutes from './routes/authRoutes';
-import postRoutes from './routes/postRoutes';
-import profileRoutes from './routes/profileRoutes';
-import jobRoutes from './routes/jobRoutes';
-import eventRoutes from './routes/eventRoutes';
+import authRoutes from './src/routes/authRoutes';
+import postRoutes from './src/routes/postRoutes';
+import profileRoutes from './src/routes/profileRoutes';
+import jobRoutes from './src/routes/jobRoutes';
+import eventRoutes from './src/routes/eventRoutes';
 
 const app = express();
 
