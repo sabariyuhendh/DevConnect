@@ -24,6 +24,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = () => {
@@ -96,17 +101,94 @@ const Navbar = () => {
               </Badge>
             </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/messages')}
-              className="relative h-9 w-9 p-0 hover:bg-accent"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-foreground text-background rounded-full">
-                2
-              </Badge>
-            </Button>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/messages')}
+                  className="relative h-9 w-9 p-0 hover:bg-accent"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground rounded-full shadow-lg animate-pulse">
+                    2
+                  </Badge>
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Unread Messages</h3>
+                    <Badge className="bg-primary text-primary-foreground text-xs">
+                      2 new
+                    </Badge>
+                  </div>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="p-2 space-y-2">
+                    {/* Sample unread messages preview */}
+                    <div className="p-3 rounded-lg cursor-pointer hover:bg-muted border border-primary/30 bg-card ring-1 ring-primary/20 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                            SC
+                          </div>
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center shadow-lg">
+                            <span className="text-[10px] font-bold text-primary-foreground">2</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-sm">Sarah Chen</h4>
+                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            </div>
+                            <span className="text-xs text-muted-foreground">2 min ago</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Thanks for the React tips! Really helpful 🚀
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg cursor-pointer hover:bg-muted border border-primary/30 bg-card ring-1 ring-primary/20 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                            FD
+                          </div>
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center shadow-lg">
+                            <span className="text-[10px] font-bold text-primary-foreground">5</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-sm">Frontend Developers</h4>
+                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            </div>
+                            <span className="text-xs text-muted-foreground">15 min ago</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Alex: Anyone tried the new React 18 features?
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 border-t border-border">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate('/messages')}
+                  >
+                    View All Messages
+                  </Button>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

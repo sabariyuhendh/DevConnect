@@ -9,12 +9,12 @@ const Layout = () => {
   const isMessagesPage = location.pathname === '/messages';
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-background">
+    <div className={`w-full flex flex-col bg-background ${isMessagesPage ? 'h-screen' : 'min-h-screen'}`}>
       <Navbar />
       
       {/* Main content area */}
-      <div className="flex flex-1 w-full relative">
-        <main className="flex-1 overflow-auto relative">
+      <div className={`flex flex-1 w-full relative ${isMessagesPage ? 'h-[calc(100vh-4rem)] overflow-hidden' : 'overflow-hidden'}`}>
+        <main className={`flex-1 w-full ${isMessagesPage ? 'h-full overflow-hidden p-0' : 'overflow-y-auto overflow-x-hidden'}`}>
           <Outlet />
         </main>
       </div>
