@@ -1,19 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
 import morgan from 'morgan';
-import { NODE_ENV, CORS_ORIGIN } from './src/config/env';
-import { AppError } from './src/utils/errors';
-
-// Load environment variables
-dotenv.config();
-
-// Initialize Prisma Client
-const prisma = new PrismaClient({
-  log: NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
-});
+import { CORS_ORIGIN, NODE_ENV, PORT } from './src/config/env';
+import { AppError, globalErrorHandler } from './src/utils/errors';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes';
@@ -64,7 +54,12 @@ app.all('*', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Global error handling middleware
-import { globalErrorHandler } from './src/utils/errors';
 app.use(globalErrorHandler);
 
-// Implementation removed — server bootstrap will be reimplemented by the user.
+const port = Number(PORT) || 3001;
+app.listen(port, () => {
+  if (NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log(`✅ DevConnect backend running on http://localhost:${port}`);
+  }
+});

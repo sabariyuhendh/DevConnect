@@ -1,7 +1,17 @@
 import dotenv from 'dotenv';
+import path from 'path';
 import { z } from 'zod';
 
-dotenv.config();
+// Load env vars from either:
+// - process.cwd()/.env (when running inside backend/)
+// - backend/.env (when running from repo root)
+const cwdEnvPath = path.resolve(process.cwd(), '.env');
+const backendEnvPath = path.resolve(__dirname, '../../.env');
+
+dotenv.config({ path: cwdEnvPath });
+if (!process.env.DATABASE_URL && !process.env.JWT_SECRET) {
+  dotenv.config({ path: backendEnvPath });
+}
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -14,7 +24,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
 });
 
-const env = envSchema.parse({
+const parsed = envSchema.safeParse({
   DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
@@ -24,6 +34,29 @@ const env = envSchema.parse({
   RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX,
   CORS_ORIGIN: process.env.CORS_ORIGIN,
 });
+
+if (!parsed.success) {
+  const missingKeys = parsed.error.issues
+    .map((i) => i.path?.[0])
+    .filter(Boolean)
+    .join(', ');
+
+  // eslint-disable-next-line no-console
+  console.error(
+    [
+      '❌ Backend env validation failed.',
+      `Missing/invalid: ${missingKeys || 'unknown'}`,
+      `Looked for env files at:`,
+      `- ${cwdEnvPath}`,
+      `- ${backendEnvPath}`,
+      `Create backend/.env (see backend/ENV_SETUP.md) and restart.`,
+    ].join('\n')
+  );
+
+  throw parsed.error;
+}
+
+const env = parsed.data;
 
 export const {
   DATABASE_URL,
@@ -40,6 +73,3 @@ export const IS_PRODUCTION = NODE_ENV === 'production';
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
 export const IS_TEST = NODE_ENV === 'test';
 
-// Implementation removed — env configuration to be reimplemented by the user.
-
-export {};
