@@ -38,7 +38,7 @@ prisma.$connect()
       console.log('✅ Database connection established');
     }
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('❌ Database connection failed:', error);
     process.exit(1);
   });
