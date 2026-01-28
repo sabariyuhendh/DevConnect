@@ -24,6 +24,8 @@ import Settings from "./pages/Settings";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import UserDiscovery from "./pages/UserDiscovery";
+import ProfileManagement from "./pages/ProfileManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,10 +42,12 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route element={<Layout />}>
-              <Route path="/feed" element={<Feed />} />
+            <Route path="/feed" element={<Feed />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/network" element={<NetworkPage />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/discover" element={<UserDiscovery />} />
+              <Route path="/profile-management" element={<ProfileManagement />} />
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/create" element={<BlogEditor />} />

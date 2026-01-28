@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { 
   Search, 
   Send, 
@@ -59,6 +61,9 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 
 const Messages = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const { isConnected, isConnecting, error: wsError, on, off, sendMessage: wsSendMessage, markAsRead, joinConversation, leaveConversation, startTyping, stopTyping, onlineUsers, typingUsers } = useWebSocket(user?.token || null);
+  
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,9 +71,14 @@ const Messages = () => {
   const [showNotifications, setShowNotifications] = useState(true); // Show notifications first
   const [notificationTab, setNotificationTab] = useState<'messages' | 'jobs' | 'events'>('messages');
   const [sidebarWidth, setSidebarWidth] = useState(320); // Default 320px (w-80)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Track seen notifications
   const [seenNotifications, setSeenNotifications] = useState<Set<string>>(new Set());
+  
+  // Real-time message updates
+  const [realtimeMessages, setRealtimeMessages] = useState<Map<string, any>>(new Map());
+  const [conversationUnreadCounts, setConversationUnreadCounts] = useState<Map<string, number>>(new Map());
 
   // Job Notifications
   const jobNotifications = [
@@ -445,9 +455,10 @@ const Messages = () => {
     : null;
 
   const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      console.log('Sending message:', messageInput);
+    if (messageInput.trim() && selectedChat && isConnected) {
+      wsSendMessage(selectedChat, messageInput);
       setMessageInput('');
+      stopTyping(selectedChat);
     }
   };
 
@@ -455,6 +466,15 @@ const Messages = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    } else if (selectedChat && isConnected) {
+      // Send typing indicator
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      startTyping(selectedChat);
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping(selectedChat);
+      }, 3000);
     }
   };
 
@@ -469,6 +489,70 @@ const Messages = () => {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [selectedChat]);
+
+  // WebSocket event listeners for real-time updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Listen for new messages
+    const handleNewMessage = (data: any) => {
+      console.log('New message received:', data);
+      setRealtimeMessages(prev => {
+        const updated = new Map(prev);
+        updated.set(data.id, data);
+        return updated;
+      });
+      
+      // Update unread count for the conversation
+      setConversationUnreadCounts(prev => {
+        const updated = new Map(prev);
+        const current = updated.get(data.conversationId) || 0;
+        updated.set(data.conversationId, current + 1);
+        return updated;
+      });
+    };
+
+    // Listen for read status updates
+    const handleMessageRead = (data: any) => {
+      console.log('Message read:', data);
+      // Update UI to show read status
+    };
+
+    // Listen for connection status
+    const handleJoinedConversation = (data: any) => {
+      console.log('Joined conversation:', data);
+    };
+
+    // Listen for errors
+    const handleMessageError = (data: any) => {
+      console.error('Message error:', data);
+    };
+
+    on('new_message', handleNewMessage);
+    on('message_read', handleMessageRead);
+    on('joined_conversation', handleJoinedConversation);
+    on('message_error', handleMessageError);
+
+    return () => {
+      off('new_message', handleNewMessage);
+      off('message_read', handleMessageRead);
+      off('joined_conversation', handleJoinedConversation);
+      off('message_error', handleMessageError);
+    };
+  }, [isConnected, on, off]);
+
+  // Join/leave conversation when selected chat changes
+  useEffect(() => {
+    if (!isConnected || !selectedChat) return;
+
+    joinConversation(selectedChat);
+
+    return () => {
+      if (selectedChat) {
+        leaveConversation(selectedChat);
+      }
+    };
+  }, [selectedChat, isConnected, joinConversation, leaveConversation]);
 
   return (
     <div className="h-full w-full flex bg-background overflow-hidden">
@@ -532,7 +616,21 @@ const Messages = () => {
 
         {/* Sidebar Title */}
         <div className="px-4 py-2 border-b border-border flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{getSidebarTitle()}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold">{getSidebarTitle()}</h2>
+            {/* WebSocket Connection Status */}
+            <div className="flex items-center gap-1">
+              {isConnecting && (
+                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" title="Connecting..." />
+              )}
+              {isConnected && (
+                <div className="w-2 h-2 bg-green-500 rounded-full" title="Connected" />
+              )}
+              {!isConnected && !isConnecting && (
+                <div className="w-2 h-2 bg-red-500 rounded-full" title="Disconnected" />
+              )}
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             {!showNotifications && !selectedChat && (
               <Button
@@ -806,13 +904,15 @@ const Messages = () => {
                         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
                           {conversation.avatar}
                         </div>
-                        {conversation.online && (
+                        {/* Show online status from WebSocket */}
+                        {(conversation.online || onlineUsers.includes(conversation.id)) && (
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
                         )}
-                        {conversation.unread > 0 && (
+                        {/* Update unread count from real-time data */}
+                        {(conversation.unread > 0 || (conversationUnreadCounts.get(conversation.id) || 0) > 0) && (
                           <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center shadow-lg animate-pulse">
                             <span className="text-[10px] font-bold text-primary-foreground">
-                              {conversation.unread > 9 ? '9+' : conversation.unread}
+                              {Math.max(conversation.unread, conversationUnreadCounts.get(conversation.id) || 0) > 9 ? '9+' : Math.max(conversation.unread, conversationUnreadCounts.get(conversation.id) || 0)}
                             </span>
                           </div>
                         )}
@@ -828,7 +928,7 @@ const Messages = () => {
                                 </span>
                               )}
                             </h4>
-                            {conversation.unread > 0 && (
+                            {(conversation.unread > 0 || (conversationUnreadCounts.get(conversation.id) || 0) > 0) && (
                               <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 animate-pulse" />
                             )}
                           </div>
@@ -838,7 +938,7 @@ const Messages = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <p className={`text-xs truncate flex-1 ${
-                            conversation.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'
+                            (conversation.unread > 0 || (conversationUnreadCounts.get(conversation.id) || 0) > 0) ? 'font-medium text-foreground' : 'text-muted-foreground'
                           }`}>
                             {conversation.lastMessage}
                           </p>
@@ -1394,6 +1494,24 @@ const Messages = () => {
                         }`}>
                           {message.timestamp}
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Typing Indicators */}
+                {selectedChat && Array.from(typingUsers.values()).filter(t => t.conversationId === selectedChat && t.isTyping).map((typingUser) => (
+                  <div key={`typing-${typingUser.userId}`} className="flex justify-start">
+                    <div className="flex items-start gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                        {typingUser.username?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <div className="rounded-lg px-3 py-2 bg-card border border-border rounded-bl-sm">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
                       </div>
                     </div>
                   </div>
