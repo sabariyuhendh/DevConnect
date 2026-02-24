@@ -1,11 +1,11 @@
 import { spawn } from "child_process";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 async function testMcpServer() {
-    // Use the compiled code in dist/
-    const child = spawn("node", ["dist/index.js"], {
-        cwd: __dirname,
+    // When running compiled dist/test.js, look for index.js in the same dir
+    const child = spawn("node", [join(__dirname, "index.js")], {
+        cwd: join(__dirname, ".."),
     });
     child.stderr.on("data", (data) => {
         console.error(`Server Log: ${data}`);
