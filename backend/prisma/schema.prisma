@@ -53,6 +53,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
+  createdGroups Group[] // groups created by this user
+  groupMessagesSent GroupMessage[] // group messages sent by this user
   posts         Post[]
   comments      Comment[]
   likes         Like[]         @relation("UserLikes")
