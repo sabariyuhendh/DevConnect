@@ -19,7 +19,6 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
@@ -186,3 +185,4 @@ const Login = () => {
 };
 
 export default Login;
+/*sjds*/
