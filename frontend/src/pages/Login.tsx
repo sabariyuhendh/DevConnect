@@ -31,19 +31,23 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-background">
-      {/* Left Side: Artistic Background */}
-      <div className="hidden lg:flex auth-background items-center justify-center p-12">
-        <div className="relative z-10 text-center space-y-4">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-background auth-page-transition">
+      {/* Left Side: Image Background */}
+      <div className="hidden lg:flex relative items-center justify-center p-12 overflow-hidden">
+        <img 
+          src="/bg_img/Gemini_Generated_Image_qx0c69qx0c69qx0c.png" 
+          alt="DevConnect Background"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="relative z-10 text-center space-y-4 bg-black/40 backdrop-blur-sm p-8 rounded-2xl">
           <Link to="/" className="inline-flex items-center space-x-2">
-            <Code2 className="h-12 w-12 text-foreground" />
-            <span className="text-4xl font-bold tracking-tight">DevConnect</span>
+            <Code2 className="h-12 w-12 text-white" />
+            <span className="text-4xl font-bold tracking-tight text-white">DevConnect</span>
           </Link>
-          <p className="text-xl text-muted-foreground max-w-sm mx-auto">
+          <p className="text-xl text-white/90 max-w-sm mx-auto">
             The space where developers unite, build, and grow together.
           </p>
         </div>
-        {/* Abstract wallpaper effects are handled by auth-background in CSS */}
       </div>
 
       {/* Right Side: Login Form */}
@@ -58,11 +62,11 @@ const Login = () => {
 
           <div className="space-y-4">
             {/* Social Authentication */}
-            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group">
+            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect">
               <Chrome className="h-5 w-5 group-hover:scale-110 transition-transform" />
               Continue with Google
             </Button>
-            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group">
+            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect">
               <Apple className="h-5 w-5 group-hover:scale-110 transition-transform" />
               Continue with Apple
             </Button>
@@ -88,7 +92,7 @@ const Login = () => {
 
               {showOtherOptions && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group">
+                  <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect">
                     <Github className="h-5 w-5 group-hover:scale-110 transition-transform" />
                     Continue with Github
                   </Button>
@@ -134,7 +138,7 @@ const Login = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-12 text-base font-medium ripple-effect" disabled={isLoading}>
                       {isLoading ? "Signing in..." : "Continue"}
                     </Button>
                   </form>
@@ -155,7 +159,7 @@ const Login = () => {
                   className="h-12 text-base"
                   required
                 />
-                <Button type="submit" className="w-full h-12 text-base font-medium">
+                <Button type="submit" className="w-full h-12 text-base font-medium ripple-effect">
                   Continue
                 </Button>
               </form>
