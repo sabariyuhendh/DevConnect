@@ -311,4 +311,132 @@
     transform: translateY(0);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out;
   }
+
+  /* Message bubbles animations */
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Code block styling */
+  .code-block {
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  }
+
+  /* Smooth scrollbar for messages */
+  .messages-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .messages-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .messages-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  .messages-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Command menu animation */
+  @keyframes commandSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .command-menu {
+    animation: commandSlideUp 0.2s ease-out;
+  }
+
+  /* Online status pulse */
+  @keyframes statusPulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .status-pulse {
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  /* Monitor frame effect */
+  .monitor-frame {
+    box-shadow: 
+      0 0 0 1px hsl(var(--border)),
+      0 10px 30px rgba(0, 0, 0, 0.15),
+      0 20px 60px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+
+  .monitor-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Monitor screen glow */
+  .monitor-screen {
+    position: relative;
+  }
+
+  .monitor-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      rgba(0, 0, 0, 0.02) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Smooth message animations */
+  .message-bubble {
+    animation: messageSlideIn 0.3s ease-out;
+  }
+
+  /* Remove input selection and focus styles */
+  input:focus,
+  input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+  }
+
+  input::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: inherit;
+  }
+
+  input::-moz-selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: inherit;
+  }
 }
