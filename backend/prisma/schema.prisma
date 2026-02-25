@@ -8,65 +8,55 @@ datasource db {
 }
 
 model User {
-  // Identification & Authentication
-  id            String  @id @default(cuid())
-  email         String  @unique
-  emailVerified Boolean @default(false)
-  firstName     String?
-  lastName      String?
-  username      String  @unique
-  password      String?
-  provider      String? // "local" | "google" | "github"
+  id                                              String               @id @default(cuid())
+  email                                           String               @unique
+  emailVerified                                   Boolean              @default(false)
+  firstName                                       String?
+  lastName                                        String?
+  username                                        String               @unique
+  password                                        String?
+  provider                                        String?
+  bio                                             String?
+  title                                           String?
+  company                                         String?
+  location                                        String?
+  website                                         String?
+  github                                          String?
+  linkedin                                        String?
+  phone                                           String?
+  profilePicture                                  String?
+  coverPicture                                    String?
+  timezone                                        String?              @default("UTC")
+  locale                                          String?              @default("en")
+  isActive                                        Boolean              @default(true)
+  isVerified                                      Boolean              @default(false)
+  isOnline                                        Boolean              @default(false)
+  lastSeen                                        DateTime?
+  profileViews                                    Int                  @default(0)
+  preferences                                     Json?
+  createdAt                                       DateTime             @default(now())
+  updatedAt                                       DateTime             @updatedAt
+  comments                                        Comment[]
+  conversationMembers                             ConversationMember[]
+  following                                       Follow[]             @relation("Following")
+  followers                                       Follow[]             @relation("FollowedBy")
+  createdGroups                                   Group[]
+  groupMembers                                    GroupMember[]
+  groupMessagesSent                               GroupMessage[]
+  likes                                           Like[]               @relation("UserLikes")
+  messages                                        Message[]
+  MessageReadStatus                               MessageReadStatus[]
+  posts                                           Post[]
+  refreshTokens                                   RefreshToken[]
+  sessions                                        Session[]
+  UserActivityLog                                 UserActivityLog[]
+  UserConnection_UserConnection_addresseeIdToUser UserConnection[]     @relation("UserConnection_addresseeIdToUser")
+  UserConnection_UserConnection_requesterIdToUser UserConnection[]     @relation("UserConnection_requesterIdToUser")
+  UserExperience                                  UserExperience[]
+  UserReport_UserReport_reportedIdToUser          UserReport[]         @relation("UserReport_reportedIdToUser")
+  UserReport_UserReport_reporterIdToUser          UserReport[]         @relation("UserReport_reporterIdToUser")
+  UserSkill                                       UserSkill[]
 
-  // Profile Information
-  bio            String?
-  title          String? // Job title (e.g., "Senior Full Stack Developer")
-  company        String? // Company name
-  location       String?
-  website        String?
-  github         String?
-  linkedin       String?
-  phone          String?
-  profilePicture String?
-  coverPicture   String?
-
-  // Localization
-  timezone String? @default("UTC")
-  locale   String? @default("en")
-
-  // Account Status & Security
-  isActive   Boolean @default(true)
-  isVerified Boolean @default(false)
-
-  // Chat & Online Status
-  isOnline Boolean   @default(false)
-  lastSeen DateTime?
-
-  // Analytics
-  profileViews Int @default(0)
-
-  // User Preferences (stored as JSON for flexibility)
-  preferences Json? // { notifications: {...}, privacy: {...}, theme: {...} }
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]         @relation("UserLikes")
-  sessions      Session[]
-  refreshTokens RefreshToken[]
-  followers     Follow[]       @relation("FollowedBy")
-  following     Follow[]       @relation("Following")
-
-  // Messaging
-  messages            Message[]
-  conversationMembers ConversationMember[]
-  groupMembers        GroupMember[]
-
-  // Performance Indexes
   @@index([email])
   @@index([username])
   @@index([isOnline])
@@ -75,30 +65,26 @@ model User {
   @@index([isActive])
 }
 
-// Messaging models
-
 model Conversation {
-  id        String   @id @default(cuid())
-  type      ConversationType @default(DIRECT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members  ConversationMember[]
-  messages Message[]
+  id        String               @id @default(cuid())
+  type      ConversationType     @default(DIRECT)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   ConversationMember[]
+  messages  Message[]
 
   @@index([type])
   @@index([updatedAt])
 }
 
 model ConversationMember {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   userId         String
-  joinedAt       DateTime @default(now())
+  joinedAt       DateTime     @default(now())
   lastReadAt     DateTime?
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([userId])
@@ -106,31 +92,29 @@ model ConversationMember {
 }
 
 model Group {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String?
-  isPublic    Boolean  @default(true)
+  isPublic    Boolean        @default(true)
   createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  createdBy User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  members   GroupMember[]
-  messages  GroupMessage[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  createdBy   User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  messages    GroupMessage[]
 
   @@index([createdById])
   @@index([updatedAt])
 }
 
 model GroupMember {
-  id        String   @id @default(cuid())
-  groupId   String
-  userId    String
-  role      GroupRole @default(MEMBER)
-  joinedAt  DateTime @default(now())
-
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
   @@index([userId])
@@ -138,14 +122,14 @@ model GroupMember {
 }
 
 model Message {
-  id             String   @id @default(cuid())
-  conversationId String
-  senderId       String
-  content        String
-  createdAt      DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  id                String              @id @default(cuid())
+  conversationId    String
+  senderId          String
+  content           String
+  createdAt         DateTime            @default(now())
+  conversation      Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender            User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  MessageReadStatus MessageReadStatus[]
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
@@ -157,12 +141,152 @@ model GroupMessage {
   senderId  String
   content   String
   createdAt DateTime @default(now())
-
-  group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  sender User  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([groupId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model MessageReadStatus {
+  id        String   @id
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  Message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model UserActivityLog {
+  id        String   @id
+  userId    String
+  action    String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([userId, createdAt])
+}
+
+model UserConnection {
+  id                                    String           @id
+  requesterId                           String
+  addresseeId                           String
+  status                                ConnectionStatus @default(PENDING)
+  createdAt                             DateTime         @default(now())
+  updatedAt                             DateTime
+  User_UserConnection_addresseeIdToUser User             @relation("UserConnection_addresseeIdToUser", fields: [addresseeId], references: [id], onDelete: Cascade)
+  User_UserConnection_requesterIdToUser User             @relation("UserConnection_requesterIdToUser", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@index([requesterId])
+  @@index([status])
+}
+
+model UserExperience {
+  id          String    @id
+  userId      String
+  company     String
+  position    String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isCurrent])
+  @@index([userId])
+}
+
+model UserReport {
+  id                               String       @id
+  reporterId                       String
+  reportedId                       String
+  reason                           String
+  description                      String?
+  status                           ReportStatus @default(PENDING)
+  createdAt                        DateTime     @default(now())
+  User_UserReport_reportedIdToUser User         @relation("UserReport_reportedIdToUser", fields: [reportedId], references: [id], onDelete: Cascade)
+  User_UserReport_reporterIdToUser User         @relation("UserReport_reporterIdToUser", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([reportedId])
+  @@index([reporterId])
+  @@index([status])
+}
+
+model UserSkill {
+  id               String            @id
+  userId           String
+  skillName        String
+  proficiencyLevel ProficiencyLevel?
+  yearsExperience  Int?
+  createdAt        DateTime          @default(now())
+  User             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([skillName])
+  @@index([userId])
 }
 
 enum ConversationType {
@@ -175,57 +299,22 @@ enum GroupRole {
   MEMBER
 }
 
-// Placeholder models - to be fully implemented later
-// These minimal models allow the schema to validate while maintaining relations
-
-model Post {
-  id        String   @id @default(cuid())
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
 }
 
-model Comment {
-  id        String   @id @default(cuid())
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum ProficiencyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
 }
 
-model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Follow {
-  id          String   @id @default(cuid())
-  followerId  String // User who is following
-  followingId String // User being followed
-  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  @@unique([followerId, followingId])
-  @@index([followerId])
-  @@index([followingId])
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
 }

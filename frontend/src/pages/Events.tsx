@@ -204,7 +204,7 @@ const Events = () => {
                 {events.map((event) => (
                   <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
                     <div className="md:flex">
-                      <div className="md:w-48 h-48 md:h-auto bg-gradient-to-br from-blue-500 to-purple-600" />
+                      <div className="md:w-48 h-48 md:h-auto bg-gradient-to-br from-gray-400 to-gray-600" />
                       
                       <div className="flex-1 p-6">
                         <div className="flex items-start justify-between">

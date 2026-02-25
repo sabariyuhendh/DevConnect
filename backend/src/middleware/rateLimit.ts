@@ -7,7 +7,7 @@ const createRateLimiter = (windowMs: number, max: number, message: string) => {
     windowMs, // Time window in milliseconds
     max, // Max requests per windowMs per IP
     message: { message },
-    handler: (req: Request, res: Response) => {
+    handler: (req: Request, res: Response, next: NextFunction) => {
       return errorResponse(res, message, 429);
     },
   };

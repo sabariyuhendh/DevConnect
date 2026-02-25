@@ -218,7 +218,7 @@ What patterns have you found most effective in your React applications? I'd love
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <Link to="/profile" className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 flex items-center justify-center text-white text-sm font-semibold">
                     {post.author.avatar}
                   </div>
                 </Link>
@@ -336,7 +336,7 @@ What patterns have you found most effective in your React applications? I'd love
               {comments.map((comment) => (
                 <div key={comment.id} className="space-y-4">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                       {comment.author.avatar}
                     </div>
                     
@@ -366,7 +366,7 @@ What patterns have you found most effective in your React applications? I'd love
                   {/* Replies */}
                   {comment.replies.map((reply) => (
                     <div key={reply.id} className="ml-10 flex items-start space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-500 to-gray-700 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                         {reply.author.avatar}
                       </div>
                       
