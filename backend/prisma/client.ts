@@ -1,3 +1,5 @@
-// Implementation removed — Prisma client initialization to be reimplemented by the user.
+import { PrismaClient } from '@prisma/client';
 
-export {};
+const prisma = new PrismaClient();
+
+export default prisma;

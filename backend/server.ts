@@ -48,8 +48,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// 404 Handler
-app.all('*', (req: Request, res: Response, next: NextFunction) => {
+// 404 Handler - catch all unmatched routes
+app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 

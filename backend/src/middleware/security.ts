@@ -72,7 +72,9 @@ export const webSecurity = [
 ];
 
 // Placeholder security middleware
-export const security: RequestHandler = (req, res, next) => {
+import { RequestHandler } from 'express';
+
+export const security: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   // placeholder
   next();
 };

@@ -1,8 +1,11 @@
 // Implementation removed — error handler middleware to be reimplemented by the user.
 
-import { RequestHandler } from 'express';
+import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 
-export const errorHandler: RequestHandler = (err, req, res, next) => {
+export const errorHandler: ErrorRequestHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   // placeholder
-  next(err);
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal server error'
+  });
 };

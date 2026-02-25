@@ -41,7 +41,7 @@ const SuggestedConnections = () => {
         {suggestions.map((person, index) => (
           <div key={index} className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                 {person.avatar}
               </div>
               <div className="flex-1 min-w-0">

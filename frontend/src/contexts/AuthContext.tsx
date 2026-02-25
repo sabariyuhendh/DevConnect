@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type User = {
   id?: string;
   email?: string;
-  username?: string; // frontend-only username
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: string;
+  bio?: string;
+  title?: string;
+  company?: string;
+  location?: string;
   token?: string;
 };
 
@@ -11,6 +18,7 @@ type AuthContextType = {
   user: User | null;
   setUser: (u: User | null) => void;
   signOut: () => void;
+  isAuthenticated: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,10 +42,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = () => setUserAndPersist(null);
+  const signOut = () => {
+    setUserAndPersist(null);
+    localStorage.removeItem('dc_user');
+  };
+
+  const isAuthenticated = !!user && !!user.token;
 
   return (
-    <AuthContext.Provider value={{ user, setUser: setUserAndPersist, signOut }}>
+    <AuthContext.Provider value={{ user, setUser: setUserAndPersist, signOut, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

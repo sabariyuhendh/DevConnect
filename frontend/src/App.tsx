@@ -4,11 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import ProfilePage from "./pages/ProfilePage";
+import UserProfile from "./pages/UserProfile";
 import Feed from "./pages/Feed";
 import Messages from "./pages/Messages";
 import NetworkPage from "./pages/NetworkPage";
@@ -24,6 +27,7 @@ import Settings from "./pages/Settings";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,33 +45,38 @@ function ScrollToTop() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route element={<Layout />}>
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/network" element={<NetworkPage />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/jobs" element={<JobsPage />} />
-              <Route path="/events" element={<EventsPage />} />
-              <Route path="/create" element={<BlogEditor />} />
-              <Route path="/post/:id" element={<PostDetailPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/feed" element={<Feed />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/network" element={<NetworkPage />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/events" element={<EventsPage />} />
+                <Route path="/create" element={<BlogEditor />} />
+                <Route path="/post/:id" element={<PostDetailPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<NotFound />} />
+                <Route path="/u/:username" element={<UserProfile />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
