@@ -23,57 +23,14 @@ import SuggestedConnections from '@/components/SuggestedConnections';
 
 const Feed = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const filters = [
     { id: 'all', label: 'All Posts', icon: <TrendingUp className="h-4 w-4" /> },
     { id: 'following', label: 'Following', icon: <Users className="h-4 w-4" /> },
     { id: 'code', label: 'Code & Tech', icon: <Code className="h-4 w-4" /> },
     { id: 'events', label: 'Events', icon: <Calendar className="h-4 w-4" /> },
-  ];
-
-  const posts = [
-    {
-      id: '1',
-      author: {
-        name: 'Sarah Chen',
-        username: '@sarah_codes',
-        avatar: 'SC',
-        title: 'Senior Frontend Developer at Meta'
-      },
-      content: 'Just shipped a new feature using React Server Components! The performance improvements are incredible. Here\'s what I learned during the implementation...',
-      timestamp: '2 hours ago',
-      likes: 124,
-      comments: 18,
-      shares: 7,
-      tags: ['React', 'Performance', 'WebDev'],
-      readTime: '3 min read',
-      isLiked: false,
-      isBookmarked: false
-    },
-    {
-      id: '2',
-      author: {
-        name: 'Marcus Rodriguez',
-        username: '@marcus_dev',
-        avatar: 'MR',
-        title: 'Full Stack Engineer at Stripe'
-      },
-      content: 'Built a real-time collaborative code editor using WebSockets and Monaco Editor. The architecture challenges were fascinating! Open sourcing it next week 🚀',
-      timestamp: '4 hours ago',
-      likes: 89,
-      comments: 12,
-      shares: 15,
-      tags: ['WebSockets', 'Real-time', 'Open Source'],
-      readTime: '5 min read',
-      isLiked: true,
-      isBookmarked: false,
-      codeSnippet: `// WebSocket connection setup
-const ws = new WebSocket('ws://localhost:8080');
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  updateEditor(data);
-};`
-    }
   ];
 
   return (
@@ -112,9 +69,33 @@ ws.onmessage = (event) => {
 
             {/* Posts */}
             <div className="space-y-6">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+              {loading ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">Loading posts...</p>
+                  </CardContent>
+                </Card>
+              ) : posts.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">No posts yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Be the first to share something with the community!
+                    </p>
+                    <Button asChild>
+                      <Link to="/create">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Post
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                posts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))
+              )}
             </div>
 
             {/* Load More */}
@@ -138,15 +119,15 @@ ws.onmessage = (event) => {
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Posts this week</span>
-                  <span className="font-medium">3</span>
+                  <span className="font-medium">0</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Profile views</span>
-                  <span className="font-medium">127</span>
+                  <span className="font-medium">0</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">New connections</span>
-                  <span className="font-medium">8</span>
+                  <span className="font-medium">0</span>
                 </div>
                 <Separator />
                 <Button variant="outline" size="sm" className="w-full">

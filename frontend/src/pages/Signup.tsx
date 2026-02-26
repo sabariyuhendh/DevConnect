@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Code2, Eye, EyeOff, Check, Github, Chrome } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_BASE, apiRequest } from '@/config/api';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -114,9 +113,11 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      console.log('📝 Attempting signup...');
+      console.log('📍 API Base:', API_BASE);
+      
+      const data = await apiRequest('/api/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -126,12 +127,12 @@ const Signup = () => {
         })
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(err.message || 'Signup failed');
-      }
+      console.log('✅ Signup successful');
 
-      const data = await res.json();
+      // Store token separately for API requests
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
 
       // Persist user data
       const userData = {
@@ -152,6 +153,7 @@ const Signup = () => {
       });
       navigate('/feed');
     } catch (err: any) {
+      console.error('❌ Signup failed:', err);
       toast({
         title: "Signup failed",
         description: err.message || 'Unable to create account. Please try again later.',

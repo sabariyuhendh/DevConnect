@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiBase } from '../utils/api';
 
 export default function AuthSignUp() {
   const { setUser } = useAuth();
+  const navigate = useNavigate();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -17,9 +19,18 @@ export default function AuthSignUp() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Log API configuration on mount
+  useEffect(() => {
+    console.log('=== API Configuration ===');
+    console.log('API Base URL:', apiBase);
+    console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+    console.log('Environment:', import.meta.env.MODE);
+    console.log('========================');
+  }, []);
+
   // Debounced username availability check
   useEffect(() => {
-    if (!username) {
+    if (!username || username.length < 2) {
       setUsernameAvailable(null);
       setChecking(false);
       return;
@@ -28,14 +39,29 @@ export default function AuthSignUp() {
     setChecking(true);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch(`${apiBase}/api/auth/check-username?username=${encodeURIComponent(username)}`);
+        const url = `${apiBase}/api/auth/check-username?username=${encodeURIComponent(username)}`;
+        console.log('[Username Check] Checking username:', username);
+        console.log('[Username Check] API URL:', url);
+        console.log('[Username Check] API Base:', apiBase);
+        
+        const res = await fetch(url);
+        console.log('[Username Check] Response status:', res.status);
+        
         if (!res.ok) {
+          console.error('[Username Check] Failed:', res.status, res.statusText);
+          const errorText = await res.text();
+          console.error('[Username Check] Error body:', errorText);
           if (mounted) setUsernameAvailable(null);
         } else {
           const data = await res.json();
-          if (mounted) setUsernameAvailable(Boolean(data.available));
+          console.log('[Username Check] Response data:', data);
+          console.log('[Username Check] Available:', data.available);
+          console.log('[Username Check] Available === true:', data.available === true);
+          // Explicitly check if available is true
+          if (mounted) setUsernameAvailable(data.available === true);
         }
-      } catch {
+      } catch (err) {
+        console.error('[Username Check] Network error:', err);
         if (mounted) setUsernameAvailable(null);
       } finally {
         if (mounted) setChecking(false);
@@ -51,6 +77,11 @@ export default function AuthSignUp() {
     e.preventDefault();
     setError(null);
 
+    console.log('[Signup] Starting signup process...');
+    console.log('[Signup] Username:', username);
+    console.log('[Signup] Email:', email);
+    console.log('[Signup] Username available:', usernameAvailable);
+
     if (!username) return setError('Username is required');
     if (usernameAvailable === false) return setError('Username is taken');
     if (!email) return setError('Email is required');
@@ -61,19 +92,43 @@ export default function AuthSignUp() {
     setLoading(true);
     try {
       const body = { username, email, password };
-      const res = await fetch(`${apiBase}/api/auth/signup`, {
+      const url = `${apiBase}/api/auth/signup`;
+      
+      console.log('[Signup] API URL:', url);
+      console.log('[Signup] API Base:', apiBase);
+      console.log('[Signup] Request body:', { username, email, password: '***' });
+      
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+      
+      console.log('[Signup] Response status:', res.status);
+      
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Signup failed' }));
+        const errorText = await res.text();
+        console.error('[Signup] Error response:', errorText);
+        let err;
+        try {
+          err = JSON.parse(errorText);
+        } catch {
+          err = { message: 'Signup failed' };
+        }
         throw err;
       }
+      
       const data = await res.json();
+      console.log('[Signup] Success! Response:', { ...data, token: '***' });
+      
       // Persist token and username in auth context
       setUser({ id: data.user?.id, email: data.user?.email, username: data.user?.username || username, token: data.token });
+      console.log('[Signup] User set in context');
+      
+      // Redirect to feed page
+      navigate('/feed');
     } catch (err: any) {
+      console.error('[Signup] Error:', err);
       setError(err?.message || 'Signup failed');
     } finally {
       setLoading(false);
@@ -83,6 +138,21 @@ export default function AuthSignUp() {
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 420, padding: 12 }}>
       <h3>Create your account</h3>
+
+      {/* Debug Info */}
+      <div style={{ 
+        fontSize: 11, 
+        padding: 8, 
+        background: '#f0f0f0', 
+        border: '1px solid #ccc', 
+        borderRadius: 4, 
+        marginBottom: 12,
+        fontFamily: 'monospace'
+      }}>
+        <div><strong>Debug Info:</strong></div>
+        <div>API Base: {apiBase}</div>
+        <div>Env: {import.meta.env.MODE}</div>
+      </div>
 
       <label>
         Username

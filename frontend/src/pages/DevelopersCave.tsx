@@ -3,8 +3,10 @@ import {
   Timer, Volume2, CheckSquare, MessageSquare, TrendingUp, Smile, Award, FileText,
   X, Minus, Play, Pause, RotateCcw, Plus, Send, Filter, Bookmark,
   ThumbsUp, MessageCircle, Settings, Users, Flame, VolumeX,
-  Coffee, CloudRain, Waves, Keyboard, Hash, Check
+  Coffee, CloudRain, Waves, Keyboard, Hash, Check, Trash2
 } from 'lucide-react';
+import { useCaveSocket } from '@/hooks/useCaveSocket';
+import { useCaveTasks } from '@/hooks/useCaveTasks';
 
 const caveStyles = `
   .cave-glass-panel {
@@ -133,9 +135,26 @@ const DevelopersCave = () => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK'>('POMODORO');
   const [selectedRoom, setSelectedRoom] = useState('#frontend-devs');
-  const [rooms, setRooms] = useState(['#frontend-devs', '#backend', '#ai-ml', '#system-design']);
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [newMessage, setNewMessage] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Use custom hooks
+  const { messages, isConnected, sendMessage, rooms: fetchedRooms } = useCaveSocket(selectedRoom);
+  const { tasks, isLoading: tasksLoading, addTask, toggleTask, deleteTask } = useCaveTasks();
+
+  // Use fetched rooms or fallback to default
+  const rooms = fetchedRooms.length > 0 
+    ? fetchedRooms.map(r => r.name) 
+    : ['#frontend-devs', '#backend', '#ai-ml', '#system-design'];
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const toggleModule = (moduleId: string) => {
     setModules(prev => prev.map(m => 
@@ -243,13 +262,19 @@ const DevelopersCave = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleCreateRoom = () => {
-    if (newRoomName.trim() && !rooms.includes(newRoomName.trim())) {
-      const roomName = newRoomName.trim().startsWith('#') ? newRoomName.trim() : `#${newRoomName.trim()}`;
-      setRooms([...rooms, roomName]);
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim()) return;
+    
+    const roomName = newRoomName.trim().startsWith('#') ? newRoomName.trim() : `#${newRoomName.trim()}`;
+    
+    try {
+      // Call API to create room (will be implemented)
+      // For now, just switch to the new room name
       setSelectedRoom(roomName);
       setNewRoomName('');
       setShowCreateRoom(false);
+    } catch (error) {
+      console.error('Failed to create room:', error);
     }
   };
 
@@ -395,8 +420,8 @@ const DevelopersCave = () => {
               </div>
               <div className="flex-1 overflow-auto p-4">
                 {module.id === 'focus' && <FocusModule time={focusTime} isRunning={isTimerRunning} mode={timerMode} onToggle={() => setIsTimerRunning(!isTimerRunning)} onReset={handleTimerReset} onModeChange={handleTimerModeChange} formatTime={formatTime} />}
-                {module.id === 'tasks' && <TasksModule />}
-                {module.id === 'chat' && <ChatModule selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} rooms={rooms} showCreateRoom={showCreateRoom} setShowCreateRoom={setShowCreateRoom} newRoomName={newRoomName} setNewRoomName={setNewRoomName} handleCreateRoom={handleCreateRoom} />}
+                {module.id === 'tasks' && <TasksModule tasks={tasks} isLoading={tasksLoading} onAddTask={addTask} onToggleTask={toggleTask} onDeleteTask={deleteTask} />}
+                {module.id === 'chat' && <ChatModule selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} rooms={rooms} showCreateRoom={showCreateRoom} setShowCreateRoom={setShowCreateRoom} newRoomName={newRoomName} setNewRoomName={setNewRoomName} handleCreateRoom={handleCreateRoom} messages={messages} isConnected={isConnected} sendMessage={sendMessage} newMessage={newMessage} setNewMessage={setNewMessage} messagesEndRef={messagesEndRef} />}
                 {module.id === 'notes' && <NotesModule />}
                 {module.id === 'trends' && <TrendsModule />}
                 {module.id === 'memes' && <MemesModule />}
@@ -469,9 +494,23 @@ const FocusModule = ({ time, isRunning, mode, onToggle, onReset, onModeChange, f
   </div>
 );
 
-const TasksModule = () => {
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const TasksModule = ({ tasks, isLoading, onAddTask, onToggleTask, onDeleteTask }: {
+  tasks: any[];
+  isLoading: boolean;
+  onAddTask: (title: string) => void;
+  onToggleTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+}) => {
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const handleAddTask = () => {
+    if (newTaskTitle.trim()) {
+      onAddTask(newTaskTitle);
+      setNewTaskTitle('');
+      setShowAddTask(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -479,10 +518,34 @@ const TasksModule = () => {
         <button className="px-3 py-1 text-xs font-medium bg-[#FF5722]/10 text-[#FF5722] rounded-lg border border-[#FF5722]/30 flex items-center gap-1">
           <Filter className="h-3 w-3" /> All
         </button>
-        <button className="px-3 py-1 text-xs font-medium dark:text-gray-400 text-gray-600 hover:text-[#FF5722] transition-colors ml-auto flex items-center gap-1">
+        <button 
+          onClick={() => setShowAddTask(!showAddTask)}
+          className="px-3 py-1 text-xs font-medium dark:text-gray-400 text-gray-600 hover:text-[#FF5722] transition-colors ml-auto flex items-center gap-1"
+        >
           <Plus className="h-3 w-3" /> Add task
         </button>
       </div>
+      
+      {showAddTask && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
+            placeholder="Task title..."
+            className="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF5722]/50"
+            autoFocus
+          />
+          <button
+            onClick={handleAddTask}
+            className="h-10 w-10 flex items-center justify-center bg-[#FF5722] text-white rounded-lg hover:bg-[#FF5722]/90 transition-colors"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <div className="text-sm dark:text-gray-400 text-gray-500">Loading tasks...</div>
@@ -496,13 +559,22 @@ const TasksModule = () => {
       ) : (
         <div className="space-y-2">
           {tasks.map(task => (
-            <div key={task.id} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-gray-100 dark:border-white/5 hover:border-[#FF5722]/30 transition-colors">
+            <div key={task.id} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-gray-100 dark:border-white/5 hover:border-[#FF5722]/30 transition-colors group">
               <div className="flex items-start gap-2">
-                <input type="checkbox" className="mt-1 accent-[#FF5722]" checked={task.status === 'COMPLETED'} onChange={() => {}} />
+                <input 
+                  type="checkbox" 
+                  className="mt-1 accent-[#FF5722] cursor-pointer" 
+                  checked={task.status === 'COMPLETED'} 
+                  onChange={() => onToggleTask(task.id)} 
+                />
                 <div className="flex-1">
-                  <p className="text-sm font-medium dark:text-gray-200 text-gray-800">{task.title}</p>
+                  <p className={`text-sm font-medium dark:text-gray-200 text-gray-800 ${task.status === 'COMPLETED' ? 'line-through opacity-60' : ''}`}>
+                    {task.title}
+                  </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 bg-[#FF5722]/10 text-[#FF5722] rounded border border-[#FF5722]/30">{task.priority}</span>
+                    <span className="text-xs px-2 py-0.5 bg-[#FF5722]/10 text-[#FF5722] rounded border border-[#FF5722]/30">
+                      {task.priority}
+                    </span>
                     {task.dueDate && (
                       <span className="text-xs dark:text-gray-400 text-gray-500">
                         {new Date(task.dueDate).toLocaleDateString()}
@@ -510,29 +582,23 @@ const TasksModule = () => {
                     )}
                   </div>
                 </div>
+                <button
+                  onClick={() => onDeleteTask(task.id)}
+                  className="opacity-0 group-hover:opacity-100 h-8 w-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-red-500 transition-all"
+                  title="Delete task"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 text-xs dark:text-gray-400 text-gray-500 pt-2 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-[#FF5722]" 
-            style={{ width: tasks.length > 0 ? `${(tasks.filter(t => t.status === 'COMPLETED').length / tasks.length) * 100}%` : '0%' }}
-          />
-        </div>
-        <span>{tasks.filter(t => t.status === 'COMPLETED').length}/{tasks.length}</span>
-      </div>
     </div>
   );
 };
 
-const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setShowCreateRoom, newRoomName, setNewRoomName, handleCreateRoom }: any) => {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
+const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setShowCreateRoom, newRoomName, setNewRoomName, handleCreateRoom, messages, isConnected, sendMessage, newMessage, setNewMessage, messagesEndRef }: any) => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
@@ -551,6 +617,7 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
             <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors dark:text-gray-400 text-gray-600">
               <Users className="h-4 w-4" />
             </button>
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Connected' : 'Disconnected'} />
           </>
         ) : (
           <div className="flex-1 flex items-center gap-2">
@@ -582,9 +649,9 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
         )}
       </div>
       <div className="flex-1 overflow-auto mb-3">
-        {isLoading ? (
+        {!isConnected ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-sm dark:text-gray-400 text-gray-500">Loading messages...</div>
+            <div className="text-sm dark:text-gray-400 text-gray-500">Connecting to chat...</div>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -628,7 +695,7 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={(e) => {
             if (e.key === 'Enter' && newMessage.trim()) {
-              // Send message logic here
+              sendMessage(newMessage);
               setNewMessage('');
             }
           }}
@@ -637,16 +704,18 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
         <button 
           onClick={() => {
             if (newMessage.trim()) {
-              // Send message logic here
+              sendMessage(newMessage);
               setNewMessage('');
             }
           }}
-          disabled={!newMessage.trim()}
+          disabled={!newMessage.trim() || !isConnected}
           className="h-10 w-10 flex items-center justify-center bg-[#FF5722] text-white rounded-lg hover:bg-[#FF5722]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={isConnected ? 'Send message' : 'Connecting...'}
         >
           <Send className="h-4 w-4" />
         </button>
       </div>
+      <div ref={messagesEndRef} />
     </div>
   );
 };

@@ -521,3 +521,26 @@ async function updateReputation(userId: string, action: string) {
     },
   });
 }
+
+// Export all controller functions
+export {
+  startFocusSession,
+  completeFocusSession,
+  getFocusSessions,
+  createTask,
+  getTasks,
+  updateTask,
+  deleteTask,
+  createNote,
+  getNotes,
+  updateNote,
+  deleteNote,
+  getChatRooms,
+  createChatRoom,
+  joinChatRoom,
+  getChatMessages,
+  getTrendArticles,
+  toggleBookmark,
+  incrementReadCount,
+  getReputation,
+};

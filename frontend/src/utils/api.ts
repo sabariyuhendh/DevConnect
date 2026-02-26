@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 
-export const apiBase = process.env.REACT_APP_API_BASE || '';
+// Use VITE_API_URL for Vite projects, fallback to localhost
+export const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function useApi() {
   const { user } = useAuth();

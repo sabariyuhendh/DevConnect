@@ -55,7 +55,6 @@ exports.webSecurity = [
     // Security headers
     ...exports.securityMiddleware,
 ];
-// Placeholder security middleware
 const security = (req, res, next) => {
     // placeholder
     next();

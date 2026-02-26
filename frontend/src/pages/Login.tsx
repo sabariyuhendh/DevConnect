@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Code2, Eye, EyeOff, Github, Chrome } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_BASE, apiRequest } from '@/config/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -23,23 +22,35 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both email and password",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      console.log('🔐 Attempting login...');
+      console.log('📍 API Base:', API_BASE);
+      
+      const data = await apiRequest('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Login failed' }));
-        throw new Error(err.message || 'Invalid credentials');
+      console.log('✅ Login successful');
+
+      // Store token separately for API requests
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
       }
 
-      const data = await res.json();
-
-      // Persist user data
+      // Store user data in context
       const userData = {
         id: data.user?.id,
         email: data.user?.email,
@@ -60,6 +71,7 @@ const Login = () => {
       // Redirect to the page they were trying to access or /feed
       navigate(from, { replace: true });
     } catch (err: any) {
+      console.error('❌ Login failed:', err);
       toast({
         title: "Login failed",
         description: err.message || 'Unable to login. Please check your credentials.',
@@ -96,20 +108,33 @@ const Login = () => {
           <div className="space-y-2 text-center lg:text-left">
             <h1 className="text-3xl font-semibold tracking-tight">Welcome to DevConnect</h1>
             <p className="text-muted-foreground">
-              New here or coming back? Choose how you want to continue
+              Sign in to continue to your account
             </p>
+          </div>
+
+          {/* Debug Info */}
+          <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+            API: {API_BASE}
           </div>
 
           <div className="space-y-4">
             {/* Social Authentication */}
-            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect"
+              disabled
+            >
               <Chrome className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              Continue with Google
+              Continue with Google (Coming Soon)
             </Button>
             
-            <Button variant="outline" className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 text-base font-medium transition-all hover:bg-accent flex items-center justify-center gap-2 group ripple-effect"
+              disabled
+            >
               <Github className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              Continue with Github
+              Continue with Github (Coming Soon)
             </Button>
 
             <div className="relative py-2">
@@ -128,11 +153,12 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="samlee.mobbin@gmail.com"
+                  placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12 text-base"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -152,19 +178,25 @@ const Login = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 text-base pr-10"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-base font-medium ripple-effect" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Continue"}
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-base font-medium ripple-effect" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </div>

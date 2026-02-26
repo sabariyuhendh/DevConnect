@@ -422,14 +422,7 @@
     animation: messageSlideIn 0.3s ease-out;
   }
 
-  /* Remove input selection and focus styles */
-  input:focus,
-  input:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: transparent !important;
-  }
-
+  /* Input selection style */
   input::selection {
     background-color: hsl(var(--primary) / 0.2);
     color: inherit;

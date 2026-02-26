@@ -56,6 +56,16 @@ model User {
   UserReport_UserReport_reportedIdToUser          UserReport[]         @relation("UserReport_reportedIdToUser")
   UserReport_UserReport_reporterIdToUser          UserReport[]         @relation("UserReport_reporterIdToUser")
   UserSkill                                       UserSkill[]
+  
+  // Developer's Cave Relations
+  caveFocusSessions                               CaveFocusSession[]
+  caveTasks                                       CaveTask[]
+  caveNotes                                       CaveNote[]
+  caveChatRoomsCreated                            CaveChatRoom[]
+  caveRoomMemberships                             CaveRoomMember[]
+  caveChatMessages                                CaveChatMessage[]
+  caveArticleBookmarks                            CaveArticleBookmark[]
+  caveReputation                                  CaveReputation?
 
   @@index([email])
   @@index([username])

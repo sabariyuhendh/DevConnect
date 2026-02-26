@@ -9,23 +9,32 @@ import { AppError } from '../utils/errors';
 export const signup = async (req: Request, res: Response) => {
   const { email, password, username, firstName, lastName } = req.body;
 
+  console.log('[Backend] Signup request received');
+  console.log('[Backend] Request body:', { email, username, firstName, lastName, password: '***' });
+
   try {
     // Normalize username
     const normalizedUsername = username?.trim().toLowerCase();
     
+    console.log('[Backend] Normalized username:', normalizedUsername);
+    
     if (!normalizedUsername) {
+      console.log('[Backend] Username is missing');
       return res.status(400).json({ message: 'Username is required' });
     }
 
+    console.log('[Backend] Checking for existing user...');
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email }, { username: normalizedUsername }] },
-      select: { id: true },
+      select: { id: true, email: true, username: true },
     });
     
     if (existing) {
+      console.log('[Backend] User already exists:', { email: existing.email, username: existing.username });
       return res.status(409).json({ message: 'Email or username already in use' });
     }
 
+    console.log('[Backend] No existing user found, creating new user...');
     const hashedPassword = await bcrypt.hash(password, 12);
     
     const user = await prisma.user.create({
@@ -39,9 +48,12 @@ export const signup = async (req: Request, res: Response) => {
       }
     });
 
-    const token = signToken({ id: user.id });
+    console.log('[Backend] User created successfully:', { id: user.id, username: user.username, email: user.email });
 
-    res.status(201).json({
+    const token = signToken({ id: user.id });
+    console.log('[Backend] JWT token generated');
+
+    const response = {
       token,
       user: {
         id: user.id,
@@ -52,8 +64,12 @@ export const signup = async (req: Request, res: Response) => {
         profilePicture: user.profilePicture,
         provider: user.provider
       }
-    });
+    };
+    
+    console.log('[Backend] Sending success response');
+    res.status(201).json(response);
   } catch (error) {
+    console.error('[Backend] Signup error:', error);
     res.status(400).json({
       message: 'Unable to create account',
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -115,22 +131,47 @@ export const me = async (req: Request, res: Response) => {
 export const checkUsername = async (req: Request, res: Response) => {
   const { username } = req.query;
   
+  console.log('=== USERNAME CHECK START ===');
+  console.log('[Backend] Raw query params:', JSON.stringify(req.query));
+  console.log('[Backend] Username from query:', username);
+  console.log('[Backend] Username type:', typeof username);
+  
   if (!username || typeof username !== 'string') {
+    console.log('[Backend] Invalid username parameter');
+    console.log('=== USERNAME CHECK END (INVALID) ===');
     return res.status(400).json({ message: 'Username is required', available: false });
   }
 
   try {
+    const normalizedUsername = username.toLowerCase().trim();
+    console.log('[Backend] Original username:', `"${username}"`);
+    console.log('[Backend] Normalized username:', `"${normalizedUsername}"`);
+    console.log('[Backend] Username length:', normalizedUsername.length);
+    
+    // First, let's check all usernames in the database for debugging
+    const allUsers = await prisma.user.findMany({
+      select: { username: true },
+      take: 10
+    });
+    console.log('[Backend] Sample usernames in DB:', allUsers.map(u => u.username));
+    
+    // Now check for exact match
     const existing = await prisma.user.findUnique({
-      where: { username: username.toLowerCase().trim() },
-      select: { id: true }
+      where: { username: normalizedUsername },
+      select: { id: true, username: true }
     });
     
     const isAvailable = !existing;
-    console.log(`[Username Check] username: "${username}", exists: ${!!existing}, available: ${isAvailable}`);
+    console.log('[Backend] Query result:', existing ? `Found user: ${existing.username}` : 'No user found');
+    console.log('[Backend] User exists in DB:', !!existing);
+    console.log('[Backend] Username available:', isAvailable);
+    console.log('[Backend] Sending response:', JSON.stringify({ available: isAvailable }));
+    console.log('=== USERNAME CHECK END ===');
     
     return res.json({ available: isAvailable });
   } catch (error) {
-    console.error('[Username Check Error]', error);
+    console.error('[Backend] Username check error:', error);
+    console.log('=== USERNAME CHECK END (ERROR) ===');
     return res.status(500).json({ message: 'Error checking username', available: false });
   }
 };

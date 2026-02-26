@@ -1,11 +1,11 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth';
+import { protect } from '../middleware/auth';
 import * as caveController from '../controllers/caveController';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticate);
+router.use(protect);
 
 // Focus Sessions
 router.post('/focus/start', caveController.startFocusSession);

@@ -11,27 +11,41 @@ const jwt_1 = require("../utils/jwt");
 // Local signup
 const signup = async (req, res) => {
     const { email, password, username, firstName, lastName } = req.body;
+    console.log('[Backend] Signup request received');
+    console.log('[Backend] Request body:', { email, username, firstName, lastName, password: '***' });
     try {
+        // Normalize username
+        const normalizedUsername = username === null || username === void 0 ? void 0 : username.trim().toLowerCase();
+        console.log('[Backend] Normalized username:', normalizedUsername);
+        if (!normalizedUsername) {
+            console.log('[Backend] Username is missing');
+            return res.status(400).json({ message: 'Username is required' });
+        }
+        console.log('[Backend] Checking for existing user...');
         const existing = await database_1.default.user.findFirst({
-            where: { OR: [{ email }, { username }] },
-            select: { id: true },
+            where: { OR: [{ email }, { username: normalizedUsername }] },
+            select: { id: true, email: true, username: true },
         });
         if (existing) {
+            console.log('[Backend] User already exists:', { email: existing.email, username: existing.username });
             return res.status(409).json({ message: 'Email or username already in use' });
         }
+        console.log('[Backend] No existing user found, creating new user...');
         const hashedPassword = await bcryptjs_1.default.hash(password, 12);
         const user = await database_1.default.user.create({
             data: {
                 email,
-                username,
+                username: normalizedUsername,
                 firstName,
                 lastName,
                 password: hashedPassword,
                 provider: 'local'
             }
         });
+        console.log('[Backend] User created successfully:', { id: user.id, username: user.username, email: user.email });
         const token = (0, jwt_1.signToken)({ id: user.id });
-        res.status(201).json({
+        console.log('[Backend] JWT token generated');
+        const response = {
             token,
             user: {
                 id: user.id,
@@ -42,9 +56,12 @@ const signup = async (req, res) => {
                 profilePicture: user.profilePicture,
                 provider: user.provider
             }
-        });
+        };
+        console.log('[Backend] Sending success response');
+        res.status(201).json(response);
     }
     catch (error) {
+        console.error('[Backend] Signup error:', error);
         res.status(400).json({
             message: 'Unable to create account',
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -100,18 +117,43 @@ exports.me = me;
 // Check username availability
 const checkUsername = async (req, res) => {
     const { username } = req.query;
+    console.log('=== USERNAME CHECK START ===');
+    console.log('[Backend] Raw query params:', JSON.stringify(req.query));
+    console.log('[Backend] Username from query:', username);
+    console.log('[Backend] Username type:', typeof username);
     if (!username || typeof username !== 'string') {
-        return res.status(400).json({ message: 'Username is required' });
+        console.log('[Backend] Invalid username parameter');
+        console.log('=== USERNAME CHECK END (INVALID) ===');
+        return res.status(400).json({ message: 'Username is required', available: false });
     }
     try {
-        const existing = await database_1.default.user.findUnique({
-            where: { username },
-            select: { id: true }
+        const normalizedUsername = username.toLowerCase().trim();
+        console.log('[Backend] Original username:', `"${username}"`);
+        console.log('[Backend] Normalized username:', `"${normalizedUsername}"`);
+        console.log('[Backend] Username length:', normalizedUsername.length);
+        // First, let's check all usernames in the database for debugging
+        const allUsers = await database_1.default.user.findMany({
+            select: { username: true },
+            take: 10
         });
-        return res.json({ available: !existing });
+        console.log('[Backend] Sample usernames in DB:', allUsers.map(u => u.username));
+        // Now check for exact match
+        const existing = await database_1.default.user.findUnique({
+            where: { username: normalizedUsername },
+            select: { id: true, username: true }
+        });
+        const isAvailable = !existing;
+        console.log('[Backend] Query result:', existing ? `Found user: ${existing.username}` : 'No user found');
+        console.log('[Backend] User exists in DB:', !!existing);
+        console.log('[Backend] Username available:', isAvailable);
+        console.log('[Backend] Sending response:', JSON.stringify({ available: isAvailable }));
+        console.log('=== USERNAME CHECK END ===');
+        return res.json({ available: isAvailable });
     }
     catch (error) {
-        return res.status(500).json({ message: 'Error checking username' });
+        console.error('[Backend] Username check error:', error);
+        console.log('=== USERNAME CHECK END (ERROR) ===');
+        return res.status(500).json({ message: 'Error checking username', available: false });
     }
 };
 exports.checkUsername = checkUsername;

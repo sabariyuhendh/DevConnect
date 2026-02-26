@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiBase } from '../utils/api';
 import AuthSignUp from './AuthSignUp'; // render signup on the same page
 
 export default function AuthSignIn() {
   const { setUser } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState(''); // frontend-only username field
@@ -14,16 +16,27 @@ export default function AuthSignIn() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch(`${apiBase}/api/auth/signin`, {
+      const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }) // username included
+        body: JSON.stringify({ email, password })
       });
-      if (!res.ok) throw await res.json();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw errorData;
+      }
       const data = await res.json();
-      setUser({ id: data.user?.id, email: data.user?.email, username, token: data.token });
+      setUser({ 
+        id: data.user?.id, 
+        email: data.user?.email, 
+        username: data.user?.username || username, 
+        token: data.token 
+      });
+      
+      // Redirect to feed page
+      navigate('/feed');
     } catch (err: any) {
-      setError(err?.message || 'Signin failed');
+      setError(err?.message || 'Login failed');
     }
   }
 

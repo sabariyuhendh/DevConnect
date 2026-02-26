@@ -22,8 +22,9 @@ const httpServer = createServer(app);
 // Setup Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: CORS_ORIGIN,
+    origin: NODE_ENV === 'development' ? '*' : CORS_ORIGIN,
     credentials: true,
+    methods: ['GET', 'POST']
   },
   transports: ['websocket', 'polling'],
 });
@@ -39,10 +40,48 @@ if (NODE_ENV === 'development') {
 // Middleware
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use(cors({
-  origin: CORS_ORIGIN,
-  credentials: true
-}));
+
+// CORS configuration - allow all origins in development
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    console.log('🔍 CORS: Request from origin:', origin);
+    
+    // In development, allow ALL origins
+    if (NODE_ENV === 'development') {
+      console.log('✅ CORS: Allowing origin (development mode)');
+      return callback(null, true);
+    }
+    
+    // In production, check against CORS_ORIGIN
+    if (CORS_ORIGIN === '*') {
+      console.log('✅ CORS: Allowing all origins (CORS_ORIGIN=*)');
+      return callback(null, true);
+    }
+    
+    if (origin === CORS_ORIGIN) {
+      console.log('✅ CORS: Allowing origin (matches CORS_ORIGIN)');
+      return callback(null, true);
+    }
+    
+    console.log('❌ CORS: Blocking origin');
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Username'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 app.use(helmet());
 
 // Request logging middleware

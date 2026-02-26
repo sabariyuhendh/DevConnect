@@ -10,59 +10,68 @@ const getProfile = async (req, res) => {
     var _a;
     const { username } = req.params;
     const currentUserId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-    // Ensure username is a string
     if (!username || typeof username !== 'string') {
         return res.status(400).json({ message: 'Invalid username' });
     }
     try {
-        const user = await database_1.default.user.findUnique({
-            where: { username: username },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                bio: true,
-                title: true,
-                company: true,
-                location: true,
-                website: true,
-                github: true,
-                linkedin: true,
-                twitter: true,
-                profilePicture: true,
-                coverPicture: true,
-                skills: true,
-                yearsOfExp: true,
-                availability: true,
-                isOnline: true,
-                lastSeen: true,
-                profileViews: true,
-                createdAt: true,
-                provider: true,
-                _count: {
-                    select: {
-                        followers: true,
-                        following: true,
-                        posts: true
+        // Single optimized query with all data
+        const [user, userSkills, isFollowingRecord] = await Promise.all([
+            database_1.default.user.findUnique({
+                where: { username: username },
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    bio: true,
+                    title: true,
+                    company: true,
+                    location: true,
+                    website: true,
+                    github: true,
+                    linkedin: true,
+                    profilePicture: true,
+                    coverPicture: true,
+                    isOnline: true,
+                    lastSeen: true,
+                    profileViews: true,
+                    createdAt: true,
+                    provider: true,
+                    _count: {
+                        select: {
+                            followers: true,
+                            following: true,
+                            posts: true
+                        }
                     }
                 }
-            }
-        });
+            }),
+            // Fetch skills in parallel
+            database_1.default.userSkill.findMany({
+                where: {
+                    User: { username: username }
+                },
+                select: { skillName: true },
+                take: 20 // Limit to 20 skills
+            }),
+            // Check follow status in parallel (only if authenticated)
+            currentUserId ? database_1.default.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: currentUserId,
+                        followingId: username // This will be replaced after we get user.id
+                    }
+                },
+                select: { id: true }
+            }).catch(() => null) : Promise.resolve(null)
+        ]);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        // Increment profile views if not viewing own profile
-        if (currentUserId && currentUserId !== user.id) {
-            await database_1.default.user.update({
-                where: { id: user.id },
-                data: { profileViews: { increment: 1 } }
-            });
-        }
-        // Check if current user follows this profile
+        // Check follow status with correct user ID
         let isFollowing = false;
-        if (currentUserId) {
+        if (currentUserId && currentUserId !== user.id) {
             const follow = await database_1.default.follow.findUnique({
                 where: {
                     followerId_followingId: {
@@ -72,10 +81,16 @@ const getProfile = async (req, res) => {
                 }
             });
             isFollowing = !!follow;
+            // Increment profile views asynchronously (don't wait)
+            database_1.default.user.update({
+                where: { id: user.id },
+                data: { profileViews: { increment: 1 } }
+            }).catch(err => console.error('Failed to increment views:', err));
         }
         res.json({
             user: {
                 ...user,
+                skills: userSkills.map(s => s.skillName),
                 isFollowing,
                 followersCount: user._count.followers,
                 followingCount: user._count.following,
@@ -84,6 +99,7 @@ const getProfile = async (req, res) => {
         });
     }
     catch (error) {
+        console.error('[Profile Error]', error);
         res.status(500).json({
             message: 'Error fetching profile',
             error: error instanceof Error ? error.message : 'Unknown error'
