@@ -7,20 +7,22 @@ import Footer from '@/components/Footer';
 const Layout = () => {
   const location = useLocation();
   const isMessagesPage = location.pathname === '/messages';
+  const isCavePage = location.pathname === '/cave';
+  const isFullScreenPage = isMessagesPage || isCavePage;
 
   return (
-    <div className={`w-full flex flex-col bg-background ${isMessagesPage ? 'h-screen' : 'min-h-screen'}`}>
+    <div className={`w-full flex flex-col bg-background ${isFullScreenPage ? 'h-screen' : 'min-h-screen'}`}>
       <Navbar />
       
       {/* Main content area */}
-      <div className={`flex flex-1 w-full relative ${isMessagesPage ? 'h-[calc(100vh-4rem)] overflow-hidden' : 'overflow-hidden'}`}>
-        <main className={`flex-1 w-full ${isMessagesPage ? 'h-full overflow-hidden p-0' : 'overflow-y-auto overflow-x-hidden'}`}>
+      <div className={`flex flex-1 w-full relative ${isFullScreenPage ? 'h-[calc(100vh-4rem)] overflow-hidden' : 'overflow-hidden'}`}>
+        <main className={`flex-1 w-full ${isFullScreenPage ? 'h-full overflow-hidden p-0' : 'overflow-y-auto overflow-x-hidden'}`}>
           <Outlet />
         </main>
       </div>
       
-      {/* Footer - Hidden on Messages page */}
-      {!isMessagesPage && (
+      {/* Footer - Hidden on Messages and Cave pages */}
+      {!isFullScreenPage && (
         <div className="w-full footer-wrapper">
           <Footer />
         </div>

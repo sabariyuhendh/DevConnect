@@ -70,6 +70,7 @@ const Navbar = () => {
     { name: 'Feed', href: '/feed' },
     { name: 'Jobs', href: '/jobs' },
     { name: 'Events', href: '/events' },
+    { name: "Developer's Cave", href: '/cave' },
   ];
 
   const isActive = (path: string) => location.pathname === path;

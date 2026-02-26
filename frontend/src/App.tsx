@@ -25,6 +25,7 @@ import PostDetail from "./pages/PostDetail";
 import PostDetailPage from "./pages/PostDetailPage";
 import Settings from "./pages/Settings";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import DevelopersCave from "./pages/DevelopersCave";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/cave" element={<DevelopersCave />} />
                 <Route path="/create" element={<BlogEditor />} />
                 <Route path="/post/:id" element={<PostDetailPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
