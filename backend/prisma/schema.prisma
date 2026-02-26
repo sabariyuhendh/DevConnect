@@ -43,7 +43,8 @@ model User {
   createdGroups                                   Group[]
   groupMembers                                    GroupMember[]
   groupMessagesSent                               GroupMessage[]
-  likes                                           Like[]               @relation("UserLikes")
+  postLikes                                       PostLike[]           @relation("PostLikes")
+  postBookmarks                                   PostBookmark[]       @relation("PostBookmarks")
   messages                                        Message[]
   MessageReadStatus                               MessageReadStatus[]
   posts                                           Post[]
@@ -159,27 +160,71 @@ model GroupMessage {
 }
 
 model Post {
+  id           String      @id @default(cuid())
+  authorId     String
+  content      String
+  mediaUrls    String[]
+  tags         String[]
+  isDraft      Boolean     @default(false)
+  publishedAt  DateTime?
+  likeCount    Int         @default(0)
+  commentCount Int         @default(0)
+  shareCount   Int         @default(0)
+  viewCount    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  author       User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments     Comment[]
+  likes        PostLike[]
+  bookmarks    PostBookmark[]
+
+  @@index([authorId, createdAt])
+  @@index([isDraft])
+  @@index([publishedAt])
+  @@index([likeCount])
+}
+
+model PostLike {
   id        String   @id @default(cuid())
-  authorId  String
+  postId    String
+  userId    String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("PostLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model PostBookmark {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("PostBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
 }
 
 model Comment {
   id        String   @id @default(cuid())
+  postId    String
   authorId  String
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId])
 }
 
-model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  createdAt DateTime @default(now())
-  user      User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
-}
+
 
 model Session {
   id        String   @id @default(cuid())

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,19 @@ const Login = () => {
   const { setUser } = useAuth();
 
   const from = (location.state as any)?.from?.pathname || '/feed';
+
+  // Check for logout reason on mount
+  useEffect(() => {
+    const logoutReason = sessionStorage.getItem('logout_reason');
+    if (logoutReason) {
+      toast({
+        title: "Session Expired",
+        description: logoutReason,
+        variant: "destructive"
+      });
+      sessionStorage.removeItem('logout_reason');
+    }
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

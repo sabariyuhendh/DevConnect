@@ -23,10 +23,11 @@ export function useCaveTasks() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await apiRequest('/api/cave/tasks', {
+      const response = await apiRequest('/api/cave/tasks', {
         method: 'GET'
       });
-      setTasks(data.tasks || []);
+      // Backend returns { status: 'success', data: [...] }
+      setTasks(response.data || []);
     } catch (err: any) {
       console.error('❌ Failed to fetch tasks:', err);
       setError(err.message);
@@ -38,12 +39,13 @@ export function useCaveTasks() {
   // Add task
   const addTask = async (title: string, priority: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM') => {
     try {
-      const data = await apiRequest('/api/cave/tasks', {
+      const response = await apiRequest('/api/cave/tasks', {
         method: 'POST',
         body: JSON.stringify({ title, priority })
       });
-      setTasks(prev => [data.task, ...prev]);
-      return data.task;
+      // Backend returns { status: 'success', data: task }
+      setTasks(prev => [response.data, ...prev]);
+      return response.data;
     } catch (err: any) {
       console.error('❌ Failed to add task:', err);
       throw err;
@@ -58,13 +60,13 @@ export function useCaveTasks() {
     const newStatus = task.status === 'COMPLETED' ? 'TODO' : 'COMPLETED';
 
     try {
-      const data = await apiRequest(`/api/cave/tasks/${taskId}`, {
+      const response = await apiRequest(`/api/cave/tasks/${taskId}`, {
         method: 'PUT',
         body: JSON.stringify({ status: newStatus })
       });
       
       setTasks(prev => prev.map(t => 
-        t.id === taskId ? data.task : t
+        t.id === taskId ? response.data : t
       ));
     } catch (err: any) {
       console.error('❌ Failed to toggle task:', err);
@@ -89,13 +91,13 @@ export function useCaveTasks() {
   // Update task
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
-      const data = await apiRequest(`/api/cave/tasks/${taskId}`, {
+      const response = await apiRequest(`/api/cave/tasks/${taskId}`, {
         method: 'PUT',
         body: JSON.stringify(updates)
       });
       
       setTasks(prev => prev.map(t => 
-        t.id === taskId ? data.task : t
+        t.id === taskId ? response.data : t
       ));
     } catch (err: any) {
       console.error('❌ Failed to update task:', err);

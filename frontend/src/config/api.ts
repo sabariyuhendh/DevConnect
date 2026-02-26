@@ -34,6 +34,19 @@ console.log('🔧 API Configuration:', {
 
 export const API_BASE = API_BASE_URL;
 
+// Callback for handling 401 errors (token expiration)
+let onUnauthorizedCallback: (() => void) | null = null;
+let hasLoggedOut = false; // Prevent multiple logout calls
+
+/**
+ * Set callback to be called when 401 Unauthorized is received
+ * This will be used to logout the user automatically
+ */
+export function setUnauthorizedCallback(callback: () => void) {
+  onUnauthorizedCallback = callback;
+  hasLoggedOut = false; // Reset on new callback
+}
+
 /**
  * Make an authenticated API request
  */
@@ -43,8 +56,18 @@ export async function apiRequest(
 ): Promise<any> {
   const url = `${API_BASE}${endpoint}`;
   
-  // Get token from localStorage
-  const token = localStorage.getItem('auth_token');
+  // Get token from localStorage (stored in dc_user object)
+  let token: string | null = null;
+  try {
+    const userStr = localStorage.getItem('dc_user');
+    
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      token = user.token;
+    }
+  } catch (error) {
+    console.error('❌ Failed to parse user from localStorage:', error);
+  }
   
   // Setup headers
   const headers: HeadersInit = {
@@ -57,7 +80,7 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
+  console.log(`📡 API Request: ${options.method || 'GET'} ${url}`, token ? '(authenticated)' : '(NO AUTH)');
   
   try {
     const response = await fetch(url, {
@@ -71,6 +94,21 @@ export async function apiRequest(
       const error = await response.json().catch(() => ({
         message: response.statusText || 'Request failed'
       }));
+      
+      if (response.status === 401) {
+        console.error('❌ 401 Unauthorized - Token invalid or expired');
+        
+        // Only trigger logout once and if we have a callback
+        if (onUnauthorizedCallback && !hasLoggedOut) {
+          hasLoggedOut = true;
+          console.log('🚪 Triggering auto-logout...');
+          // Delay slightly to allow error to be logged
+          setTimeout(() => {
+            onUnauthorizedCallback!();
+          }, 100);
+        }
+      }
+      
       throw new Error(error.message || `HTTP ${response.status}`);
     }
     

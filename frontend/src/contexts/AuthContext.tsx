@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { setUnauthorizedCallback } from '@/config/api';
 
 type User = {
   id?: string;
@@ -27,8 +28,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
       const raw = localStorage.getItem('dc_user');
-      return raw ? JSON.parse(raw) : null;
+      const parsed = raw ? JSON.parse(raw) : null;
+      console.log('🔧 AuthProvider initialized:', parsed ? `User: ${parsed.username}, Token: ${parsed.token ? 'YES' : 'NO'}` : 'No user');
+      return parsed;
     } catch {
+      console.error('❌ Failed to parse dc_user from localStorage');
       return null;
     }
   });
@@ -42,12 +46,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = () => {
+  const signOut = (reason?: string) => {
+    console.log('🚪 Signing out user...', reason ? `Reason: ${reason}` : '');
     setUserAndPersist(null);
     localStorage.removeItem('dc_user');
+    
+    // Store logout reason in sessionStorage to show after redirect
+    if (reason) {
+      sessionStorage.setItem('logout_reason', reason);
+    }
+    
+    // Redirect to login page
+    window.location.href = '/login';
   };
 
   const isAuthenticated = !!user && !!user.token;
+
+  // Set up the unauthorized callback when the component mounts
+  useEffect(() => {
+    console.log('🔧 Setting up auto-logout callback');
+    setUnauthorizedCallback(() => {
+      console.log('🔒 Token expired - auto logout triggered');
+      console.log('⏸️  Auto-logout DISABLED for debugging');
+      
+      // TEMPORARILY DISABLED - uncomment to re-enable
+      // setTimeout(() => {
+      //   signOut('Your session has expired. Please login again.');
+      // }, 500);
+    });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, setUser: setUserAndPersist, signOut, isAuthenticated }}>

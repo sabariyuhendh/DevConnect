@@ -3,10 +3,11 @@ import {
   Timer, Volume2, CheckSquare, MessageSquare, TrendingUp, Smile, Award, FileText,
   X, Minus, Play, Pause, RotateCcw, Plus, Send, Filter, Bookmark,
   ThumbsUp, MessageCircle, Settings, Users, Flame, VolumeX,
-  Coffee, CloudRain, Waves, Keyboard, Hash, Check, Trash2
+  Coffee, CloudRain, Waves, Keyboard, Check, Trash2
 } from 'lucide-react';
-import { useCaveSocket } from '@/hooks/useCaveSocket';
+import { useChatSocket } from '@/hooks/useChatSocket';
 import { useCaveTasks } from '@/hooks/useCaveTasks';
+import { useAuth } from '@/contexts/AuthContext';
 
 const caveStyles = `
   .cave-glass-panel {
@@ -134,20 +135,12 @@ const DevelopersCave = () => {
   const [focusTime, setFocusTime] = useState(25 * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK'>('POMODORO');
-  const [selectedRoom, setSelectedRoom] = useState('#frontend-devs');
-  const [showCreateRoom, setShowCreateRoom] = useState(false);
-  const [newRoomName, setNewRoomName] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   // Use custom hooks
-  const { messages, isConnected, sendMessage, rooms: fetchedRooms } = useCaveSocket(selectedRoom);
+  const { messages, isConnected, sendMessage } = useChatSocket('general');
   const { tasks, isLoading: tasksLoading, addTask, toggleTask, deleteTask } = useCaveTasks();
-
-  // Use fetched rooms or fallback to default
-  const rooms = fetchedRooms.length > 0 
-    ? fetchedRooms.map(r => r.name) 
-    : ['#frontend-devs', '#backend', '#ai-ml', '#system-design'];
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -421,7 +414,7 @@ const DevelopersCave = () => {
               <div className="flex-1 overflow-auto p-4">
                 {module.id === 'focus' && <FocusModule time={focusTime} isRunning={isTimerRunning} mode={timerMode} onToggle={() => setIsTimerRunning(!isTimerRunning)} onReset={handleTimerReset} onModeChange={handleTimerModeChange} formatTime={formatTime} />}
                 {module.id === 'tasks' && <TasksModule tasks={tasks} isLoading={tasksLoading} onAddTask={addTask} onToggleTask={toggleTask} onDeleteTask={deleteTask} />}
-                {module.id === 'chat' && <ChatModule selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} rooms={rooms} showCreateRoom={showCreateRoom} setShowCreateRoom={setShowCreateRoom} newRoomName={newRoomName} setNewRoomName={setNewRoomName} handleCreateRoom={handleCreateRoom} messages={messages} isConnected={isConnected} sendMessage={sendMessage} newMessage={newMessage} setNewMessage={setNewMessage} messagesEndRef={messagesEndRef} />}
+                {module.id === 'chat' && <ChatModule messages={messages} isConnected={isConnected} sendMessage={sendMessage} newMessage={newMessage} setNewMessage={setNewMessage} messagesEndRef={messagesEndRef} />}
                 {module.id === 'notes' && <NotesModule />}
                 {module.id === 'trends' && <TrendsModule />}
                 {module.id === 'memes' && <MemesModule />}
@@ -598,56 +591,19 @@ const TasksModule = ({ tasks, isLoading, onAddTask, onToggleTask, onDeleteTask }
   );
 };
 
-const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setShowCreateRoom, newRoomName, setNewRoomName, handleCreateRoom, messages, isConnected, sendMessage, newMessage, setNewMessage, messagesEndRef }: any) => {
+const ChatModule = ({ messages, isConnected, sendMessage, newMessage, setNewMessage, messagesEndRef }: any) => {
+  const { user } = useAuth();
+  
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-        {!showCreateRoom ? (
-          <>
-            <select value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)} className="flex-1 text-sm bg-gray-100 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 dark:text-gray-200 text-gray-800">
-              {rooms.map((room: string) => <option key={room} value={room}>{room}</option>)}
-            </select>
-            <button 
-              onClick={() => setShowCreateRoom(true)}
-              className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-[#FF5722] hover:text-[#FF5722]/80"
-              title="Create new room"
-            >
-              <Hash className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors dark:text-gray-400 text-gray-600">
-              <Users className="h-4 w-4" />
-            </button>
-            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Connected' : 'Disconnected'} />
-          </>
-        ) : (
-          <div className="flex-1 flex items-center gap-2">
-            <Hash className="h-4 w-4 text-[#FF5722]" />
-            <input
-              type="text"
-              value={newRoomName}
-              onChange={(e) => setNewRoomName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleCreateRoom()}
-              placeholder="room-name"
-              className="flex-1 px-2 py-1 text-sm bg-gray-100 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#FF5722]/50"
-              autoFocus
-            />
-            <button 
-              onClick={handleCreateRoom}
-              className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#FF5722] text-white hover:bg-[#FF5722]/90 transition-colors"
-              title="Create"
-            >
-              <Check className="h-4 w-4" />
-            </button>
-            <button 
-              onClick={() => { setShowCreateRoom(false); setNewRoomName(''); }}
-              className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors dark:text-gray-400 text-gray-600"
-              title="Cancel"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold dark:text-gray-200 text-gray-800">General Chat</h4>
+          <p className="text-xs dark:text-gray-400 text-gray-500">Real-time messaging</p>
+        </div>
+        <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Connected' : 'Disconnected'} />
       </div>
+      
       <div className="flex-1 overflow-auto mb-3">
         {!isConnected ? (
           <div className="flex items-center justify-center h-full">
@@ -663,38 +619,45 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
           </div>
         ) : (
           <div className="space-y-3">
-            {messages.map((msg: any) => (
-              <div key={msg.id} className="flex gap-2">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                  {msg.user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold dark:text-gray-200 text-gray-800">
-                      {msg.user?.firstName && msg.user?.lastName 
-                        ? `${msg.user.firstName} ${msg.user.lastName}`
-                        : msg.user?.username || 'User'}
-                    </span>
-                    <span className="text-xs dark:text-gray-400 text-gray-500">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+            {messages.map((msg: any) => {
+              const isOwnMessage = msg.userId === user?.id;
+              return (
+                <div key={msg.id} className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                    {msg.username?.substring(0, 2).toUpperCase() || 'U'}
                   </div>
-                  <p className="text-sm bg-gray-100 dark:bg-black/30 p-2 rounded-lg dark:text-gray-300 text-gray-700">
-                    {msg.content}
-                  </p>
+                  <div className={`flex-1 ${isOwnMessage ? 'text-right' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold dark:text-gray-200 text-gray-800">
+                        {isOwnMessage ? 'You' : msg.username}
+                      </span>
+                      <span className="text-xs dark:text-gray-400 text-gray-500">
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className={`text-sm p-2 rounded-lg inline-block ${
+                      isOwnMessage 
+                        ? 'bg-[#FF5722] text-white' 
+                        : 'bg-gray-100 dark:bg-black/30 dark:text-gray-300 text-gray-700'
+                    }`}>
+                      {msg.content}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
+      
       <div className="flex gap-2">
         <input 
-          placeholder={`Message ${selectedRoom}...`} 
+          placeholder="Type a message..." 
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={(e) => {
-            if (e.key === 'Enter' && newMessage.trim()) {
+            if (e.key === 'Enter' && newMessage.trim() && isConnected) {
               sendMessage(newMessage);
               setNewMessage('');
             }
@@ -715,7 +678,6 @@ const ChatModule = ({ selectedRoom, setSelectedRoom, rooms, showCreateRoom, setS
           <Send className="h-4 w-4" />
         </button>
       </div>
-      <div ref={messagesEndRef} />
     </div>
   );
 };

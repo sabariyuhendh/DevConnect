@@ -78,7 +78,7 @@ export const createTask = async (req: Request, res: Response) => {
       },
     });
 
-    return successResponse(res, task, 'Task created', 201);
+    return successResponse(res, task, 201, 'Task created');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -131,7 +131,7 @@ export const updateTask = async (req: Request, res: Response) => {
       data,
     });
 
-    return successResponse(res, task, 'Task updated');
+    return successResponse(res, task, 200, 'Task updated');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -145,7 +145,7 @@ export const deleteTask = async (req: Request, res: Response) => {
       where: { id: taskId },
     });
 
-    return successResponse(res, null, 'Task deleted');
+    return successResponse(res, null, 200, 'Task deleted');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -165,7 +165,7 @@ export const createNote = async (req: Request, res: Response) => {
       },
     });
 
-    return successResponse(res, note, 'Note created', 201);
+    return successResponse(res, note, 201, 'Note created');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -200,7 +200,7 @@ export const updateNote = async (req: Request, res: Response) => {
       data,
     });
 
-    return successResponse(res, note, 'Note updated');
+    return successResponse(res, note, 200, 'Note updated');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -214,7 +214,7 @@ export const deleteNote = async (req: Request, res: Response) => {
       where: { id: noteId },
     });
 
-    return successResponse(res, null, 'Note deleted');
+    return successResponse(res, null, 200, 'Note deleted');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }
@@ -262,7 +262,7 @@ export const createChatRoom = async (req: Request, res: Response) => {
       },
     });
 
-    return successResponse(res, room, 'Room created', 201);
+    return successResponse(res, room, 201, 'Room created');
   } catch (error: any) {
     if (error.code === 'P2002') {
       return errorResponse(res, 'Room name already exists', 400);
@@ -283,7 +283,7 @@ export const joinChatRoom = async (req: Request, res: Response) => {
       },
     });
 
-    return successResponse(res, member, 'Joined room');
+    return successResponse(res, member, 200, 'Joined room');
   } catch (error: any) {
     if (error.code === 'P2002') {
       return errorResponse(res, 'Already a member', 400);
@@ -386,7 +386,7 @@ export const toggleBookmark = async (req: Request, res: Response) => {
         where: { id: articleId },
         data: { bookmarkCount: { decrement: 1 } },
       });
-      return successResponse(res, { bookmarked: false }, 'Bookmark removed');
+      return successResponse(res, { bookmarked: false }, 200, 'Bookmark removed');
     } else {
       await prisma.caveArticleBookmark.create({
         data: { userId, articleId },
@@ -395,7 +395,7 @@ export const toggleBookmark = async (req: Request, res: Response) => {
         where: { id: articleId },
         data: { bookmarkCount: { increment: 1 } },
       });
-      return successResponse(res, { bookmarked: true }, 'Article bookmarked');
+      return successResponse(res, { bookmarked: true }, 200, 'Article bookmarked');
     }
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
@@ -411,7 +411,7 @@ export const incrementReadCount = async (req: Request, res: Response) => {
       data: { readCount: { increment: 1 } },
     });
 
-    return successResponse(res, null, 'Read count updated');
+    return successResponse(res, null, 200, 'Read count updated');
   } catch (error: any) {
     return errorResponse(res, error.message, 500);
   }

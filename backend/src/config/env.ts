@@ -16,7 +16,7 @@ if (!process.env.DATABASE_URL && !process.env.JWT_SECRET) {
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters long'),
-  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_EXPIRES_IN: z.string().default('24h'), // Changed to accept string format like "24h", "7d", etc.
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3001'),
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'), // 15 minutes

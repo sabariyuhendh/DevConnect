@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { CORS_ORIGIN, NODE_ENV, PORT } from './src/config/env';
 import { AppError, globalErrorHandler } from './src/utils/errors';
 import { setupCaveSocket } from './src/websocket/caveSocket';
+import { setupFeedSocket } from './src/websocket/feedSocket';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes';
@@ -31,6 +32,12 @@ const io = new Server(httpServer, {
 
 // Setup Cave WebSocket namespace
 setupCaveSocket(io);
+
+// Setup Feed WebSocket namespace
+setupFeedSocket(io);
+
+// Make io available globally for broadcasting
+app.set('io', io);
 
 // Development logging
 if (NODE_ENV === 'development') {
