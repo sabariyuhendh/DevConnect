@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { protect } from '../middleware/auth';
 import { authenticateSSE } from '../middleware/sseAuth';
 import * as postController from '../controllers/postController';
 import * as feedSSEController from '../controllers/feedSSEController';
@@ -10,7 +10,7 @@ const router = Router();
 router.get('/feed/stream', authenticateSSE, feedSSEController.feedSSE);
 
 // All other routes require standard authentication
-router.use(authenticate);
+router.use(protect);
 
 // Post CRUD
 router.post('/', postController.createPost);

@@ -40,6 +40,7 @@ const Feed = () => {
     posts,
     recommendations,
     loading,
+    error,
     fetchFeed,
     fetchRecommendations,
     createPost,
@@ -209,7 +210,18 @@ const Feed = () => {
 
             {/* Posts */}
             <div className="space-y-6">
-              {loading ? (
+              {error ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <div className="text-red-500 mb-4">⚠️</div>
+                    <h3 className="font-semibold mb-2">Error loading feed</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{error}</p>
+                    <Button onClick={() => fetchFeed(activeFilter)}>
+                      Try Again
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : loading ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />

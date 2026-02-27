@@ -1,0 +1,292 @@
+{
+  "mcpServers": {
+
+    // ─────────────────────────────────────────────
+    // 1. UNIVERSAL DEVELOPER CHAT SYSTEM
+    // ─────────────────────────────────────────────
+    "devconnect-chat": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-chat"],
+      "env": {
+        "CHAT_SERVICE_URL": "http://localhost:4001",
+        "CHAT_WS_URL": "ws://localhost:4001/ws",
+        "JWT_SECRET": "${JWT_SECRET}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["send_message", "list_rooms", "search_messages"],
+      "metadata": {
+        "module": "chat-mcp",
+        "description": "Universal Developer Chat — DMs, Group Chats, Topic Rooms, Tag-Based Channels",
+        "capabilities": [
+          "direct_messages",
+          "group_chats",
+          "topic_rooms",
+          "tag_channels",
+          "threaded_replies",
+          "smart_search",
+          "mentions",
+          "keyboard_shortcuts",
+          "realtime_updates"
+        ],
+        "universal_rooms": ["learning", "hiring", "open-source", "hackathons", "events"]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 2. DEVELOPER IDENTITY & PROFILE
+    // ─────────────────────────────────────────────
+    "devconnect-identity": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-identity"],
+      "env": {
+        "IDENTITY_SERVICE_URL": "http://localhost:4002",
+        "GITHUB_CLIENT_ID": "${GITHUB_CLIENT_ID}",
+        "GITHUB_CLIENT_SECRET": "${GITHUB_CLIENT_SECRET}",
+        "CODEFORCES_API_KEY": "${CODEFORCES_API_KEY}",
+        "LEETCODE_SESSION": "${LEETCODE_SESSION}",
+        "CLOUDINARY_URL": "${CLOUDINARY_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["get_profile", "get_stats"],
+      "metadata": {
+        "module": "identity-mcp",
+        "description": "Developer Identity — Portfolio, Tech Stack, GitHub/LeetCode/Codeforces integration",
+        "capabilities": [
+          "developer_profile",
+          "tech_stack",
+          "github_integration",
+          "leetcode_stats",
+          "codeforces_stats",
+          "resume_upload",
+          "achievements",
+          "hackathon_history",
+          "skills_endorsements",
+          "living_portfolio"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 3. TASK & PRODUCTIVITY SYSTEM
+    // ─────────────────────────────────────────────
+    "devconnect-tasks": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-tasks"],
+      "env": {
+        "TASKS_SERVICE_URL": "http://localhost:4003",
+        "DB_URL": "${POSTGRES_URL}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["list_tasks", "get_board", "get_dsa_progress"],
+      "metadata": {
+        "module": "tasks-mcp",
+        "description": "Developer Productivity — Task Boards, DSA Tracker, Sprint Boards, Weekly Reports",
+        "capabilities": [
+          "personal_task_board",
+          "hackathon_sprint_board",
+          "team_task_assignments",
+          "progress_tracking",
+          "weekly_coding_reports",
+          "dsa_tracking_dashboard",
+          "cp_tracker",
+          "striver_sheet_integration"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 4. SMART MESSAGING + NOTIFICATION HUB
+    // ─────────────────────────────────────────────
+    "devconnect-notifications": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-notifications"],
+      "env": {
+        "NOTIF_SERVICE_URL": "http://localhost:4004",
+        "FIREBASE_SERVER_KEY": "${FIREBASE_SERVER_KEY}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["get_notifications", "mark_read"],
+      "metadata": {
+        "module": "notifications-mcp",
+        "description": "Smart Notification Hub — Tabbed UI, Smart Filtering, Split-pane Dashboard",
+        "capabilities": [
+          "messages_tab",
+          "jobs_tab",
+          "events_tab",
+          "searchable_conversation_list",
+          "split_pane_ui",
+          "keyboard_shortcuts",
+          "realtime_updates",
+          "smart_filtering",
+          "notification_preferences"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 5. JOB & INTERNSHIP BOARD
+    // ─────────────────────────────────────────────
+    "devconnect-jobs": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-jobs"],
+      "env": {
+        "JOBS_SERVICE_URL": "http://localhost:4005",
+        "DB_URL": "${POSTGRES_URL}",
+        "EMAIL_API_KEY": "${SENDGRID_API_KEY}",
+        "AI_SERVICE_URL": "http://localhost:4009"
+      },
+      "disabled": false,
+      "autoApprove": ["list_jobs", "search_jobs", "get_job"],
+      "metadata": {
+        "module": "jobs-mcp",
+        "description": "Job & Internship Board — Verified Postings, Skill Matching, Referral System",
+        "capabilities": [
+          "verified_company_postings",
+          "skill_based_matching",
+          "internship_alerts",
+          "referral_requests",
+          "application_tracking",
+          "recruiter_chat",
+          "ai_resume_analysis"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 6. HACKATHON & EVENT SYSTEM
+    // ─────────────────────────────────────────────
+    "devconnect-hackathons": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-hackathons"],
+      "env": {
+        "HACKATHON_SERVICE_URL": "http://localhost:4006",
+        "DB_URL": "${POSTGRES_URL}",
+        "STORAGE_URL": "${S3_BUCKET_URL}",
+        "AWS_ACCESS_KEY": "${AWS_ACCESS_KEY}",
+        "AWS_SECRET_KEY": "${AWS_SECRET_KEY}"
+      },
+      "disabled": false,
+      "autoApprove": ["list_hackathons", "list_events", "get_team"],
+      "metadata": {
+        "module": "hackathons-mcp",
+        "description": "Hackathon & Events — Team Formation, Matchmaking, Live Collab, Submission Tracker",
+        "capabilities": [
+          "team_formation",
+          "skill_based_matchmaking",
+          "event_announcements",
+          "live_collaboration_chat",
+          "submission_tracker",
+          "project_showcase",
+          "solo_registration"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 7. MCP GATEWAY (Modular Context Protocol Router)
+    // ─────────────────────────────────────────────
+    "devconnect-gateway": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-gateway"],
+      "env": {
+        "GATEWAY_PORT": "4000",
+        "CHAT_MCP_URL": "http://localhost:4001",
+        "IDENTITY_MCP_URL": "http://localhost:4002",
+        "TASKS_MCP_URL": "http://localhost:4003",
+        "NOTIFICATIONS_MCP_URL": "http://localhost:4004",
+        "JOBS_MCP_URL": "http://localhost:4005",
+        "HACKATHONS_MCP_URL": "http://localhost:4006",
+        "AI_MCP_URL": "http://localhost:4009",
+        "JWT_SECRET": "${JWT_SECRET}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["health_check", "list_modules"],
+      "metadata": {
+        "module": "gateway-mcp",
+        "description": "Central MCP Gateway — Routes requests to all sub-MCPs, handles auth & scaling",
+        "capabilities": [
+          "request_routing",
+          "auth_middleware",
+          "rate_limiting",
+          "context_propagation",
+          "independent_module_scaling",
+          "docker_compatible",
+          "saas_ready"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // 8. AI DEVELOPER ASSISTANT
+    // ─────────────────────────────────────────────
+    "devconnect-ai": {
+      "command": "uvx",
+      "args": ["mcp-server-devconnect-ai"],
+      "env": {
+        "AI_SERVICE_URL": "http://localhost:4009",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "DB_URL": "${POSTGRES_URL}"
+      },
+      "disabled": false,
+      "autoApprove": ["explain_code", "get_roadmap", "analyze_progress"],
+      "metadata": {
+        "module": "ai-mcp",
+        "description": "AI Developer Assistant — Code Explainer, Resume Improver, Interview Sim, Roadmap Generator",
+        "capabilities": [
+          "code_explanation_assistant",
+          "resume_improver",
+          "interview_simulator",
+          "learning_roadmap_generator",
+          "debug_reasoning_assistant",
+          "weekly_progress_analysis",
+          "no_direct_code_solving"
+        ]
+      }
+    },
+
+    // ─────────────────────────────────────────────
+    // SHARED UTILITIES
+    // ─────────────────────────────────────────────
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    }
+  },
+
+  // ─────────────────────────────────────────────
+  // GLOBAL CONFIG
+  // ─────────────────────────────────────────────
+  "globalConfig": {
+    "projectName": "DevConnect",
+    "version": "1.0.0",
+    "description": "Developer-first platform combining Chat, LinkedIn, GitHub, Notion & Hackathon tools",
+    "pillars": ["communication", "collaboration", "career-growth", "developer-productivity"],
+    "architecture": "modular-context-protocol",
+    "deployment": {
+      "runtime": "docker",
+      "orchestration": "docker-compose",
+      "cloud": "aws",
+      "database": "postgresql",
+      "cache": "redis",
+      "storage": "s3"
+    },
+    "ports": {
+      "gateway": 4000,
+      "chat": 4001,
+      "identity": 4002,
+      "tasks": 4003,
+      "notifications": 4004,
+      "jobs": 4005,
+      "hackathons": 4006,
+      "ai": 4009
+    }
+  }
+}

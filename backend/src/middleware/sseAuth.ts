@@ -1,23 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/env';
-import { AppError } from '../utils/errors';
 
 /**
  * SSE Authentication Middleware
  * EventSource doesn't support custom headers, so we accept token via query parameter
  */
-export const authenticateSSE = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateSSE = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get token from query parameter (EventSource limitation)
     const token = req.query.token as string;
 
+    console.log('🔐 SSE Auth: Checking token...', token ? 'Token present' : 'No token');
+
     if (!token) {
-      throw new AppError('No authentication token provided', 401);
+      console.error('❌ SSE Auth: No token provided');
+      // Set SSE headers before sending error
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'No authentication token provided' })}\n\n`);
+      res.end();
+      return;
     }
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log('✅ SSE Auth: Token verified for user', decoded.id);
 
     // Attach user to request
     req.user = {
@@ -27,10 +36,13 @@ export const authenticateSSE = async (req: Request, res: Response, next: NextFun
     };
 
     next();
-  } catch (error) {
+  } catch (error: any) {
+    console.error('❌ SSE Auth: Token verification failed:', error.message);
     // For SSE, we need to send error as SSE event, not JSON
     res.setHeader('Content-Type', 'text/event-stream');
-    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Authentication failed' })}\n\n`);
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Authentication failed: ' + error.message })}\n\n`);
     res.end();
   }
 };

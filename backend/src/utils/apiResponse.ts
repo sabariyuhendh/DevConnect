@@ -7,11 +7,18 @@ type PaginationMeta = {
   totalPages: number;
 };
 
+type MCPMeta = {
+  module: string;
+  version: string;
+  capabilities?: string[];
+};
+
 type SuccessResponse<T> = {
   status: 'success';
   data: T;
   message?: string;
   meta?: PaginationMeta;
+  mcp?: MCPMeta;
 };
 
 type ErrorResponse = {
@@ -26,12 +33,21 @@ export const successResponse = <T>(
   data: T,
   statusCode = 200,
   message = 'Operation successful',
-  meta?: PaginationMeta
+  meta?: PaginationMeta,
+  mcpModule?: string
 ): Response<SuccessResponse<T>> => {
   const response: SuccessResponse<T> = { status: 'success', data, message };
   
   if (meta) {
     response.meta = meta;
+  }
+  
+  // Add MCP metadata for microservices compatibility
+  if (mcpModule) {
+    response.mcp = {
+      module: mcpModule,
+      version: '1.0.0'
+    };
   }
   
   return res.status(statusCode).json(response);

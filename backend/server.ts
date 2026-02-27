@@ -107,9 +107,22 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/cave', caveRoutes);
 
-// Health check endpoint
+// Health check endpoint with MCP module info
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    modules: {
+      auth: { status: 'active', version: '1.0.0' },
+      social: { status: 'active', version: '1.0.0', capabilities: ['feed', 'sse', 'recommendations'] },
+      identity: { status: 'active', version: '1.0.0' },
+      jobs: { status: 'active', version: '1.0.0' },
+      events: { status: 'active', version: '1.0.0' },
+      cave: { status: 'active', version: '1.0.0' }
+    },
+    architecture: 'monolith',
+    mcpReady: true
+  });
 });
 
 // 404 Handler - catch all unmatched routes
