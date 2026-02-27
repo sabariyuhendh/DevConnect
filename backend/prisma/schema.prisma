@@ -45,6 +45,11 @@ model User {
   groupMessagesSent                               GroupMessage[]
   postLikes                                       PostLike[]           @relation("PostLikes")
   postBookmarks                                   PostBookmark[]       @relation("PostBookmarks")
+  
+  // Job Relations
+  jobPostings                                     Job[]                @relation("JobPoster")
+  jobApplications                                 JobApplication[]
+  savedJobs                                       SavedJob[]
   messages                                        Message[]
   MessageReadStatus                               MessageReadStatus[]
   posts                                           Post[]
@@ -529,4 +534,168 @@ enum TaskStatus {
   TODO
   IN_PROGRESS
   COMPLETED
+}
+
+
+// ============================================
+// JOB BOARD MODELS (LinkedIn/Indeed Pattern)
+// ============================================
+
+model Job {
+  id                String            @id @default(cuid())
+  title             String
+  company           String
+  companyLogo       String?
+  location          String
+  locationType      LocationType      @default(ONSITE)
+  employmentType    EmploymentType    @default(FULL_TIME)
+  experienceLevel   ExperienceLevel   @default(MID_LEVEL)
+  
+  // Job Details
+  description       String            @db.Text
+  requirements      String[]
+  responsibilities  String[]
+  skills            String[]
+  benefits          String[]
+  
+  // Compensation
+  salaryMin         Int?
+  salaryMax         Int?
+  salaryCurrency    String?           @default("USD")
+  salaryPeriod      SalaryPeriod?     @default(YEARLY)
+  
+  // Application
+  applicationUrl    String?
+  applicationEmail  String?
+  applyType         ApplyType         @default(INTERNAL)
+  
+  // Status & Verification
+  status            JobStatus         @default(PENDING)
+  isVerified        Boolean           @default(false)
+  isFeatured        Boolean           @default(false)
+  verifiedAt        DateTime?
+  verifiedBy        String?
+  
+  // Metadata
+  postedById        String
+  postedBy          User              @relation("JobPoster", fields: [postedById], references: [id], onDelete: Cascade)
+  viewCount         Int               @default(0)
+  applicationCount  Int               @default(0)
+  expiresAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  // Relations
+  applications      JobApplication[]
+  savedBy           SavedJob[]
+
+  @@index([status, isVerified])
+  @@index([postedById])
+  @@index([createdAt])
+  @@index([location])
+  @@index([employmentType])
+  @@index([experienceLevel])
+  @@index([expiresAt])
+}
+
+model JobApplication {
+  id              String              @id @default(cuid())
+  jobId           String
+  userId          String
+  
+  // Application Data
+  coverLetter     String?             @db.Text
+  resumeUrl       String?
+  portfolioUrl    String?
+  linkedinUrl     String?
+  githubUrl       String?
+  
+  // Status
+  status          ApplicationStatus   @default(PENDING)
+  appliedAt       DateTime            @default(now())
+  reviewedAt      DateTime?
+  respondedAt     DateTime?
+  
+  // Relations
+  job             Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([userId])
+  @@index([jobId, status])
+  @@index([appliedAt])
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  savedAt   DateTime @default(now())
+  
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([userId])
+  @@index([jobId])
+}
+
+// ============================================
+// JOB ENUMS
+// ============================================
+
+enum LocationType {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+  FREELANCE
+}
+
+enum ExperienceLevel {
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+  LEAD
+  MANAGER
+  DIRECTOR
+  EXECUTIVE
+}
+
+enum SalaryPeriod {
+  HOURLY
+  MONTHLY
+  YEARLY
+}
+
+enum ApplyType {
+  INTERNAL      // Apply through platform
+  EXTERNAL      // Redirect to external URL
+  EMAIL         // Send email
+}
+
+enum JobStatus {
+  PENDING       // Awaiting admin approval
+  APPROVED      // Approved and visible
+  REJECTED      // Rejected by admin
+  EXPIRED       // Past expiration date
+  CLOSED        // Manually closed
+}
+
+enum ApplicationStatus {
+  PENDING       // Application submitted
+  REVIEWING     // Under review
+  SHORTLISTED   // Moved to next round
+  INTERVIEWED   // Interview completed
+  OFFERED       // Job offered
+  ACCEPTED      // Offer accepted
+  REJECTED      // Application rejected
+  WITHDRAWN     // Applicant withdrew
 }

@@ -1,22 +1,8 @@
-
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
-  DollarSign, 
-  Building2, 
-  Filter,
-  Bookmark,
-  ExternalLink,
-  Users,
-  Star
-} from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -24,304 +10,351 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import {
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Clock,
+  Building2,
+  Bookmark,
+  ExternalLink,
+  Loader2,
+  Search,
+  Filter
+} from 'lucide-react';
+import { apiRequest } from '@/config/api';
+
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo?: string;
+  location: string;
+  locationType: string;
+  employmentType: string;
+  experienceLevel: string;
+  description: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryPeriod?: string;
+  createdAt: string;
+  viewCount: number;
+  applicationCount: number;
+  _count: {
+    applications: number;
+    savedBy: number;
+  };
+}
 
 const Jobs = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [experienceFilter, setExperienceFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({
+    locationType: 'all',
+    employmentType: 'all',
+    experienceLevel: 'all'
+  });
 
-  const jobs = [
-    {
-      id: '1',
-      title: 'Senior Frontend Developer',
-      company: 'TechFlow Inc.',
-      logo: 'TF',
-      location: 'San Francisco, CA',
-      type: 'Full-time',
-      remote: true,
-      salary: '$120k - $160k',
-      experience: 'Senior',
-      postedDate: '2 days ago',
-      description: 'We are looking for a Senior Frontend Developer to join our growing team. You will be responsible for building user-facing features using React, TypeScript, and modern web technologies.',
-      skills: ['React', 'TypeScript', 'Next.js', 'GraphQL', 'CSS'],
-      benefits: ['Health Insurance', 'Remote Work', '401k', 'Stock Options'],
-      applicants: 23,
-      saved: false
-    },
-    {
-      id: '2',
-      title: 'Full Stack Engineer',
-      company: 'DataViz Solutions',
-      logo: 'DV',
-      location: 'New York, NY',
-      type: 'Full-time',
-      remote: false,
-      salary: '$100k - $140k',
-      experience: 'Mid-level',
-      postedDate: '1 week ago',
-      description: 'Join our team to build data visualization tools that help businesses make better decisions. You will work with both frontend and backend technologies.',
-      skills: ['Python', 'React', 'PostgreSQL', 'Docker', 'AWS'],
-      benefits: ['Health Insurance', 'Flexible Hours', 'Learning Budget'],
-      applicants: 45,
-      saved: true
-    },
-    {
-      id: '3',
-      title: 'DevOps Engineer',
-      company: 'CloudNative Corp',
-      logo: 'CN',
-      location: 'Austin, TX',
-      type: 'Full-time',
-      remote: true,
-      salary: '$110k - $150k',
-      experience: 'Senior',
-      postedDate: '3 days ago',
-      description: 'We need a DevOps Engineer to help us scale our infrastructure. You will work with Kubernetes, AWS, and CI/CD pipelines.',
-      skills: ['Kubernetes', 'AWS', 'Docker', 'Terraform', 'Jenkins'],
-      benefits: ['Health Insurance', 'Remote Work', 'Unlimited PTO'],
-      applicants: 31,
-      saved: false
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Fetch jobs
+  const fetchJobs = useCallback(async (pageNum: number, reset: boolean = false) => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: '10',
+        ...(search && { search }),
+        ...(filters.locationType && filters.locationType !== 'all' && { locationType: filters.locationType }),
+        ...(filters.employmentType && filters.employmentType !== 'all' && { employmentType: filters.employmentType }),
+        ...(filters.experienceLevel && filters.experienceLevel !== 'all' && { experienceLevel: filters.experienceLevel })
+      });
+
+      const response = await apiRequest(`/api/jobs?${params}`, {
+        method: 'GET'
+      });
+
+      const newJobs = response.data || [];
+      const meta = response.meta;
+
+      if (reset) {
+        setJobs(newJobs);
+      } else {
+        setJobs(prev => [...prev, ...newJobs]);
+      }
+
+      setHasMore(meta && meta.page < meta.totalPages);
+    } catch (error) {
+      console.error('Failed to fetch jobs:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [loading, search, filters]);
 
-  const featuredCompanies = [
-    { name: 'Google', logo: 'G', openings: 145 },
-    { name: 'Microsoft', logo: 'M', openings: 89 },
-    { name: 'Amazon', logo: 'A', openings: 234 },
-    { name: 'Apple', logo: 'A', openings: 67 },
-  ];
+  // Initial load
+  useEffect(() => {
+    setPage(1);
+    fetchJobs(1, true);
+  }, [search, filters]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchJobs(nextPage);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loading, page, fetchJobs]);
+
+  const formatSalary = (job: Job) => {
+    if (!job.salaryMin && !job.salaryMax) return 'Salary not disclosed';
+    
+    const currency = job.salaryCurrency || 'USD';
+    const period = job.salaryPeriod || 'YEARLY';
+    
+    if (job.salaryMin && job.salaryMax) {
+      return `${currency} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()} / ${period.toLowerCase()}`;
+    }
+    
+    return `${currency} ${(job.salaryMin || job.salaryMax)?.toLocaleString()} / ${period.toLowerCase()}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Find Your Dream Developer Job</h1>
-          <p className="text-muted-foreground">Discover opportunities at top tech companies</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Find Your Next Opportunity</h1>
+          <p className="text-muted-foreground">
+            Browse {jobs.length}+ verified job postings from top companies
+          </p>
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="lg:col-span-2">
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="md:col-span-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search jobs, skills, companies..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search jobs, companies..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     className="pl-10"
                   />
                 </div>
               </div>
-              
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
+
+              {/* Location Type */}
+              <Select
+                value={filters.locationType || undefined}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, locationType: value }))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Location" />
+                  <SelectValue placeholder="Location Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="remote">Remote</SelectItem>
-                  <SelectItem value="san-francisco">San Francisco</SelectItem>
-                  <SelectItem value="new-york">New York</SelectItem>
-                  <SelectItem value="austin">Austin</SelectItem>
-                  <SelectItem value="seattle">Seattle</SelectItem>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  <SelectItem value="ONSITE">On-site</SelectItem>
+                  <SelectItem value="REMOTE">Remote</SelectItem>
+                  <SelectItem value="HYBRID">Hybrid</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={experienceFilter} onValueChange={setExperienceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Experience" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="entry">Entry Level</SelectItem>
-                  <SelectItem value="mid">Mid Level</SelectItem>
-                  <SelectItem value="senior">Senior</SelectItem>
-                  <SelectItem value="lead">Lead</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              {/* Employment Type */}
+              <Select
+                value={filters.employmentType || undefined}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, employmentType: value }))}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Job Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="full-time">Full-time</SelectItem>
-                  <SelectItem value="part-time">Part-time</SelectItem>
-                  <SelectItem value="contract">Contract</SelectItem>
-                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="FULL_TIME">Full-time</SelectItem>
+                  <SelectItem value="PART_TIME">Part-time</SelectItem>
+                  <SelectItem value="CONTRACT">Contract</SelectItem>
+                  <SelectItem value="INTERNSHIP">Internship</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Clear Filters */}
+            {(search || (filters.locationType && filters.locationType !== 'all') || (filters.employmentType && filters.employmentType !== 'all')) && (
+              <div className="mt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch('');
+                    setFilters({ locationType: 'all', employmentType: 'all', experienceLevel: 'all' });
+                  }}
+                >
+                  Clear all filters
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Job Listings */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Latest Opportunities</h2>
-              <span className="text-muted-foreground">{jobs.length} jobs found</span>
-            </div>
-
-            {jobs.map((job) => (
-              <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-r from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white font-semibold">
-                        {job.logo}
+        {/* Job Listings */}
+        <div className="space-y-4">
+          {jobs.map((job) => (
+            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  {/* Company Logo */}
+                  <div className="flex-shrink-0">
+                    {job.companyLogo ? (
+                      <img
+                        src={job.companyLogo}
+                        alt={job.company}
+                        className="w-16 h-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                        <Building2 className="h-8 w-8 text-muted-foreground" />
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-lg font-semibold">{job.title}</h3>
-                          {job.remote && (
-                            <Badge variant="secondary" className="text-xs">Remote</Badge>
-                          )}
-                        </div>
-                        
-                        <p className="text-muted-foreground mb-2">{job.company}</p>
-                        
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {job.location}
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {job.type}
-                          </div>
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            {job.salary}
-                          </div>
-                        </div>
+                    )}
+                  </div>
 
-                        <p className="text-sm mb-3 line-clamp-2">{job.description}</p>
+                  {/* Job Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-1">{job.title}</h3>
+                        <p className="text-muted-foreground">{job.company}</p>
+                      </div>
+                      <Button variant="ghost" size="icon">
+                        <Bookmark className="h-5 w-5" />
+                      </Button>
+                    </div>
 
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {job.skills.slice(0, 5).map((skill) => (
-                            <Badge key={skill} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.skills.length > 5 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{job.skills.length - 5} more
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>{job.postedDate}</span>
-                            <div className="flex items-center">
-                              <Users className="h-3 w-3 mr-1" />
-                              {job.applicants} applicants
-                            </div>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Bookmark className={`h-4 w-4 ${job.saved ? 'fill-current' : ''}`} />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                            <Button size="sm">
-                              Apply Now
-                            </Button>
-                          </div>
-                        </div>
+                    {/* Meta Info */}
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {job.location}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="h-4 w-4" />
+                        {job.employmentType.replace('_', ' ')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        {formatSalary(job)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {formatDate(job.createdAt)}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
 
-            <div className="text-center">
-              <Button variant="outline" size="lg">
-                Load More Jobs
-              </Button>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Featured Companies */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building2 className="h-5 w-5 mr-2" />
-                  Featured Companies
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {featuredCompanies.map((company, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                        {company.logo}
-                      </div>
-                      <span className="font-medium">{company.name}</span>
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Badge variant="secondary">{job.locationType}</Badge>
+                      <Badge variant="secondary">{job.experienceLevel.replace('_', ' ')}</Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {company.openings} jobs
-                    </Badge>
+
+                    {/* Description Preview */}
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                      {job.description}
+                    </p>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3">
+                      <Button>
+                        Apply Now
+                      </Button>
+                      <Button variant="outline">
+                        View Details
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground ml-auto">
+                        {job._count.applications} applicants
+                      </span>
+                    </div>
                   </div>
-                ))}
+                </div>
               </CardContent>
             </Card>
+          ))}
 
-            {/* Job Alerts */}
+          {/* Loading Indicator */}
+          {loading && (
             <Card>
-              <CardHeader>
-                <CardTitle>Job Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Get notified when new jobs matching your preferences are posted.
+              <CardContent className="p-8 text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading more jobs...</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Intersection Observer Target */}
+          <div ref={observerTarget} className="h-10" />
+
+          {/* No More Jobs */}
+          {!hasMore && jobs.length > 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  You've reached the end of the job listings
                 </p>
-                <Button className="w-full">Create Alert</Button>
               </CardContent>
             </Card>
+          )}
 
-            {/* Salary Insights */}
+          {/* No Jobs Found */}
+          {!loading && jobs.length === 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle>Salary Insights</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Frontend Developer</span>
-                  <span className="font-medium">$95k - $145k</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Backend Developer</span>
-                  <span className="font-medium">$100k - $150k</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>DevOps Engineer</span>
-                  <span className="font-medium">$110k - $160k</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Data Scientist</span>
-                  <span className="font-medium">$120k - $180k</span>
-                </div>
+              <CardContent className="p-8 text-center">
+                <Briefcase className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="font-semibold mb-2">No jobs found</h3>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your search or filters
+                </p>
               </CardContent>
             </Card>
-          </div>
+          )}
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

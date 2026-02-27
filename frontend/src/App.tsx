@@ -16,7 +16,6 @@ import Feed from "./pages/Feed";
 import Messages from "./pages/Messages";
 import NetworkPage from "./pages/NetworkPage";
 import Jobs from "./pages/Jobs";
-import JobsPage from "./pages/JobsPage";
 import Events from "./pages/Events";
 import EventsPage from "./pages/EventsPage";
 import CreatePost from "./pages/CreatePost";
@@ -63,7 +62,7 @@ const App = () => (
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/network" element={<NetworkPage />} />
                 <Route path="/messages" element={<Messages />} />
-                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs" element={<Jobs />} />
                 <Route path="/events" element={<EventsPage />} />
                 <Route path="/cave" element={<DevelopersCave />} />
                 <Route path="/create" element={<BlogEditor />} />
