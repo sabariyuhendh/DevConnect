@@ -130,7 +130,7 @@ const AnalyticsPage = () => {
   ];
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
         <div className="flex space-x-2">

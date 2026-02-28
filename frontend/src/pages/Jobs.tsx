@@ -155,20 +155,19 @@ const Jobs = () => {
   };
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Find Your Next Opportunity</h1>
-          <p className="text-muted-foreground">
+    <div>
+      {/* Header */}
+      <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Find Your Next Opportunity</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Browse {jobs.length}+ verified job postings from top companies
           </p>
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-3 sm:p-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
               {/* Search */}
               <div className="md:col-span-2">
                 <div className="relative">
@@ -177,7 +176,7 @@ const Jobs = () => {
                     placeholder="Search jobs, companies..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 text-sm"
                   />
                 </div>
               </div>
@@ -187,7 +186,7 @@ const Jobs = () => {
                 value={filters.locationType || undefined}
                 onValueChange={(value) => setFilters(prev => ({ ...prev, locationType: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Location Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,7 +202,7 @@ const Jobs = () => {
                 value={filters.employmentType || undefined}
                 onValueChange={(value) => setFilters(prev => ({ ...prev, employmentType: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Job Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -218,7 +217,7 @@ const Jobs = () => {
 
             {/* Clear Filters */}
             {(search || (filters.locationType && filters.locationType !== 'all') || (filters.employmentType && filters.employmentType !== 'all')) && (
-              <div className="mt-4">
+              <div className="mt-3 sm:mt-4">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -226,6 +225,7 @@ const Jobs = () => {
                     setSearch('');
                     setFilters({ locationType: 'all', employmentType: 'all', experienceLevel: 'all' });
                   }}
+                  className="text-xs sm:text-sm"
                 >
                   Clear all filters
                 </Button>
@@ -235,79 +235,79 @@ const Jobs = () => {
         </Card>
 
         {/* Job Listings */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {jobs.map((job) => (
             <Card key={job.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex gap-3 sm:gap-4">
                   {/* Company Logo */}
                   <div className="flex-shrink-0">
                     {job.companyLogo ? (
                       <img
                         src={job.companyLogo}
                         alt={job.company}
-                        className="w-16 h-16 rounded-lg object-cover"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                        <Building2 className="h-8 w-8 text-muted-foreground" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted flex items-center justify-center">
+                        <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       </div>
                     )}
                   </div>
 
                   {/* Job Details */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-1">{job.title}</h3>
-                        <p className="text-muted-foreground">{job.company}</p>
+                    <div className="flex items-start justify-between gap-2 sm:gap-4 mb-2">
+                      <div className="min-w-0">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-1 truncate">{job.title}</h3>
+                        <p className="text-sm sm:text-base text-muted-foreground truncate">{job.company}</p>
                       </div>
-                      <Button variant="ghost" size="icon">
-                        <Bookmark className="h-5 w-5" />
+                      <Button variant="ghost" size="icon" className="flex-shrink-0">
+                        <Bookmark className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     </div>
 
                     {/* Meta Info */}
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {job.location}
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">{job.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Briefcase className="h-4 w-4" />
-                        {job.employmentType.replace('_', ' ')}
+                        <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">{job.employmentType.replace('_', ' ')}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {formatSalary(job)}
+                        <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">{formatSalary(job)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                         {formatDate(job.createdAt)}
                       </div>
                     </div>
 
                     {/* Badges */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="secondary">{job.locationType}</Badge>
-                      <Badge variant="secondary">{job.experienceLevel.replace('_', ' ')}</Badge>
+                    <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                      <Badge variant="secondary" className="text-xs">{job.locationType}</Badge>
+                      <Badge variant="secondary" className="text-xs">{job.experienceLevel.replace('_', ' ')}</Badge>
                     </div>
 
                     {/* Description Preview */}
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3 sm:mb-4">
                       {job.description}
                     </p>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
-                      <Button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                      <Button className="w-full sm:w-auto text-sm">
                         Apply Now
                       </Button>
-                      <Button variant="outline">
+                      <Button variant="outline" className="w-full sm:w-auto text-sm">
                         View Details
-                        <ExternalLink className="ml-2 h-4 w-4" />
+                        <ExternalLink className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
-                      <span className="text-sm text-muted-foreground ml-auto">
+                      <span className="text-xs sm:text-sm text-muted-foreground text-center sm:ml-auto">
                         {job._count.applications} applicants
                       </span>
                     </div>
@@ -355,7 +355,6 @@ const Jobs = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 

@@ -1,228 +1,360 @@
-
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { 
-  Code2, 
-  Users, 
-  Briefcase, 
-  Calendar,
-  Star,
   ArrowRight,
-  Github,
-  Linkedin,
-  Globe
+  MessageSquare,
+  Fingerprint,
+  Network,
+  Check,
+  Hash,
+  Circle,
+  Send
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const Index = () => {
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      user: 'Alex Morgan',
+      time: '10:42 AM',
+      content: 'Just pushed the new API endpoints. Performance improvements are solid 🚀',
+      tag: 'feat: optimize query #429',
+      avatar: 'from-blue-400 to-blue-600'
+    },
+    {
+      id: 2,
+      user: 'Sarah Chen',
+      time: '10:45 AM',
+      content: 'On it! I\'ll take a look in a few minutes. Great work on reducing that latency.',
+      avatar: 'from-purple-400 to-purple-600'
+    }
+  ]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim()) {
+      setMessages([...messages, {
+        id: messages.length + 1,
+        user: 'You',
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        content: message,
+        avatar: 'from-pink-400 to-pink-600'
+      }]);
+      setMessage('');
+    }
+  };
   const features = [
     {
-      icon: <Users className="h-6 w-6" />,
-      title: "Professional Networking",
-      description: "Connect with developers worldwide and build meaningful professional relationships."
+      icon: <MessageSquare className="h-5 w-5" />,
+      title: "Structured Conversations",
+      description: "Move beyond fleeting chats. Engage in threaded, categorized discussions that preserve context indefinitely."
     },
     {
-      icon: <Code2 className="h-6 w-6" />,
-      title: "Knowledge Sharing",
-      description: "Share technical insights, code snippets, and learn from the community."
+      icon: <Fingerprint className="h-5 w-5" />,
+      title: "Developer Identity",
+      description: "Showcase your actual contributions, stack expertise, and GitHub portfolio, not just a job title."
     },
     {
-      icon: <Briefcase className="h-6 w-6" />,
-      title: "Career Growth",
-      description: "Discover opportunities, showcase projects, and advance your career."
-    },
-    {
-      icon: <Calendar className="h-6 w-6" />,
-      title: "Tech Events",
-      description: "Join conferences, workshops, and meetups in your technology area."
+      icon: <Network className="h-5 w-5" />,
+      title: "Purposeful Networking",
+      description: "Connect with peers based on shared technical interests and project goals, not random algorithms."
     }
   ];
 
-  const stats = [
-    { label: "Active Developers", value: "10K+" },
-    { label: "Posts Shared", value: "50K+" },
-    { label: "Job Opportunities", value: "2K+" },
-    { label: "Tech Events", value: "500+" }
-  ];
-
-  const testimonials = [
+  const comparisonData = [
     {
-      name: "Sarah Chen",
-      role: "Senior Frontend Developer",
-      avatar: "SC",
-      content: "DevConnect transformed my career. The quality of discussions and networking opportunities here are unmatched."
+      feature: "Content Feed",
+      traditional: "Infinite scrolling noise",
+      devconnect: "Curated discussions"
     },
     {
-      name: "Marcus Johnson",
-      role: "Full Stack Engineer",
-      avatar: "MJ",
-      content: "The most professional developer community I've found. Genuine connections and valuable technical insights."
+      feature: "Interaction",
+      traditional: "Likes and fleeting comments",
+      devconnect: "Structured replies"
     },
     {
-      name: "Elena Rodriguez",
-      role: "DevOps Engineer",
-      avatar: "ER",
-      content: "Finally, a platform built for developers by developers. Clean, focused, and incredibly valuable."
+      feature: "Primary Goal",
+      traditional: "Ad revenue & metrics",
+      devconnect: "Knowledge sharing"
+    },
+    {
+      feature: "Privacy",
+      traditional: "Data harvesting",
+      devconnect: "Developer first"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col font-['Inter']">
       <Navbar />
 
-      {/* Main scroll area: one section per viewport (minus navbar) */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden snap-y snap-mandatory scroll-smooth">
-        {/* Hero + Stats (single viewport) */}
-        <section className="snap-start min-h-[calc(100vh-4rem)] flex flex-col">
-          <div className="flex-1 flex items-center">
-            <div className="w-full">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-4xl mx-auto">
-                  <Badge variant="secondary" className="mb-8 text-xs font-medium px-3 py-1 bg-muted text-muted-foreground">
-                    Join 10,000+ developers worldwide
-                  </Badge>
-                  <h1 className="text-4xl lg:text-6xl font-semibold text-foreground mb-8 tracking-tight">
-                    The Professional Network
-                    <br />
-                    <span className="text-foreground">Built for Developers</span>
+      <main className="flex-1">
+        {/* Hero Section - Full Screen */}
+        <section className="relative px-4 sm:px-6 min-h-[calc(100vh-4rem)] flex items-center overflow-hidden py-12 sm:py-0">
+          {/* Background Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-radial from-primary/10 to-transparent pointer-events-none -z-10 blur-3xl opacity-50" />
+          
+          <div className="mx-auto max-w-[1200px] w-full">
+            <div className="grid gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-20 items-center">
+              {/* Left Content */}
+              <div className="flex flex-col items-start gap-6 sm:gap-8 max-w-xl">
+                <div className="flex flex-col gap-4 sm:gap-6">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[4rem] font-normal tracking-tight leading-[1.1] sm:leading-[1.05]">
+                    Built for <span className="bg-gradient-to-br from-foreground via-foreground/80 to-foreground/50 bg-clip-text text-transparent">Developers</span>.<br />
+                    Designed for <span className="text-muted-foreground">Focus.</span>
                   </h1>
-                  <p className="text-lg lg:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-                    Connect, learn, and grow with a community of passionate developers.
-                    Share knowledge, discover opportunities, and build the future together.
+                  <p className="text-base sm:text-lg leading-relaxed text-muted-foreground font-light max-w-md tracking-wide">
+                    A distraction-free environment for developers to collaborate, share knowledge, and ship code faster.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button asChild size="lg" className="professional-button-primary text-base px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Link to="/signup">
-                        Get Started Free
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="lg" className="professional-button-secondary text-base px-8 py-3 border-border hover:bg-accent" asChild>
-                      <Link to="/feed">Explore Community</Link>
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Stats pinned to bottom of the first viewport */}
-          <div className="border-t border-border bg-muted/30">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                {stats.map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-3xl lg:text-4xl font-semibold text-foreground mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section (one viewport) */}
-        <section className="snap-start min-h-[calc(100vh-4rem)] flex items-center">
-          <div className="w-full py-12 lg:py-16">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-6">
-                  Everything You Need to Excel
-                </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Powerful features designed specifically for the modern developer community
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {features.map((feature, index) => (
-                  <Card key={index} className="professional-card p-6 text-center border-border bg-card">
-                    <CardContent className="p-0">
-                      <div className="text-foreground mb-4 flex justify-center">{feature.icon}</div>
-                      <h3 className="font-semibold mb-3 text-foreground text-lg">{feature.title}</h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section (one viewport) */}
-        <section className="snap-start min-h-[calc(100vh-4rem)] flex items-center bg-muted/30">
-          <div className="w-full py-12 lg:py-16">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-6">
-                  Trusted by Developers
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  See what our community has to say
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {testimonials.map((testimonial, index) => (
-                  <Card key={index} className="professional-card p-8 border-border bg-card">
-                    <CardContent className="p-0">
-                      <div className="flex items-center mb-6">
-                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-foreground text-sm font-semibold mr-4">
-                          {testimonial.avatar}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">{testimonial.name}</div>
-                          <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                        </div>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">"{testimonial.content}"</p>
-                      <div className="flex mt-4">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-foreground text-foreground" />
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA + Footer (one viewport) */}
-        <section className="snap-start min-h-[calc(100vh-4rem)] flex flex-col">
-          <div className="flex-1 flex items-center">
-            <div className="w-full py-12 lg:py-16">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-6">
-                  Ready to Join the Community?
-                </h2>
-                <p className="text-lg text-muted-foreground mb-12">
-                  Start connecting with developers, sharing knowledge, and advancing your career today.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button asChild size="lg" className="professional-button-primary text-base px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pt-2">
+                  <Button asChild size="lg" className="group rounded-full px-6 shadow-[0_1px_10px_rgba(94,106,210,0.4)] hover:shadow-[0_4px_20px_rgba(94,106,210,0.5)] transition-all w-full sm:w-auto">
                     <Link to="/signup">
-                      Create Account
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      Join DevConnect
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </Button>
-                  <Button variant="outline" size="lg" className="professional-button-secondary text-base px-8 py-3 border-border hover:bg-accent" asChild>
-                    <Link to="/login">Sign In</Link>
+                  <Button variant="outline" size="lg" className="rounded-full px-6 w-full sm:w-auto" asChild>
+                    <Link to="/feed">Explore Community</Link>
                   </Button>
+                </div>
+
+                <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs font-medium text-muted-foreground pt-2 sm:pt-4 opacity-80">
+                  <div className="flex -space-x-2">
+                    <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full ring-2 ring-background bg-gradient-to-br from-blue-400 to-blue-600" />
+                    <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full ring-2 ring-background bg-gradient-to-br from-purple-400 to-purple-600" />
+                    <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full ring-2 ring-background bg-gradient-to-br from-pink-400 to-pink-600" />
+                  </div>
+                  <p className="tracking-wide uppercase">JOINED BY 2,000+ DEVELOPERS</p>
+                </div>
+              </div>
+
+              {/* Right Content - Interactive Chat Preview */}
+              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[460px] flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-blue-500/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 blur-[80px]" />
+                
+                <div className="relative w-full max-w-[580px] overflow-hidden rounded-xl border border-border bg-card shadow-2xl transform transition-transform duration-700 hover:scale-[1.02] hover:-translate-y-2">
+                  {/* Window Controls */}
+                  <div className="flex items-center justify-between border-b border-border bg-muted/50 p-2 sm:p-3">
+                    <div className="flex gap-1 sm:gap-1.5 pl-1">
+                      <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-muted-foreground/20" />
+                      <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-muted-foreground/20" />
+                      <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-muted-foreground/20" />
+                    </div>
+                    <div className="w-10" />
+                  </div>
+
+                  <div className="flex h-[300px] sm:h-[350px] lg:h-[380px]">
+                    {/* Sidebar - Hidden on mobile */}
+                    <div className="hidden sm:flex w-48 md:w-56 flex-col border-r border-border bg-muted/30">
+                      <div className="p-2 md:p-3">
+                        <div className="mb-4 md:mb-5 flex flex-col gap-0.5">
+                          <div className="px-2 py-1.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Channels
+                          </div>
+                          <div className="flex cursor-pointer items-center gap-2 rounded-md bg-background shadow-sm ring-1 ring-border px-2 py-1.5 text-[12px] md:text-[13px] font-medium">
+                            <Hash className="h-3 w-3 md:h-3.5 md:w-3.5 text-muted-foreground" />
+                            general
+                          </div>
+                          <div className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12px] md:text-[13px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                            <Hash className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                            announcements
+                          </div>
+                          <div className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12px] md:text-[13px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                            <Hash className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                            engineering
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-0.5 mt-2">
+                          <div className="px-2 py-1.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Direct Messages
+                          </div>
+                          <div className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12px] md:text-[13px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                            <Circle className="h-1.5 w-1.5 fill-green-500 text-green-500" />
+                            Sarah Chen
+                          </div>
+                          <div className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12px] md:text-[13px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                            <Circle className="h-1.5 w-1.5 fill-muted-foreground text-muted-foreground" />
+                            Mike Ross
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="flex flex-1 flex-col bg-card">
+                      <div className="flex items-center justify-between border-b border-border px-3 sm:px-4 py-2 sm:py-3">
+                        <div className="flex items-center gap-2">
+                          <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <span className="text-[12px] sm:text-[13px] font-semibold">general</span>
+                        </div>
+                        <div className="flex -space-x-1">
+                          <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full ring-2 ring-card bg-indigo-500/20" />
+                          <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full ring-2 ring-card bg-purple-500/20" />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 space-y-3 sm:space-y-5 overflow-y-auto p-3 sm:p-5 scrollbar-thin scrollbar-thumb-border">
+                        {messages.map((msg) => (
+                          <div key={msg.id} className="group flex gap-2 sm:gap-3">
+                            <div className={`h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 rounded-lg bg-gradient-to-br ${msg.avatar}`} />
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-[12px] sm:text-[13px] font-semibold truncate">{msg.user}</span>
+                                <span className="text-[10px] sm:text-[11px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">{msg.time}</span>
+                              </div>
+                              <div className="text-[12px] sm:text-[13px] leading-relaxed text-muted-foreground break-words">
+                                {msg.content}
+                              </div>
+                              {msg.tag && (
+                                <div className="mt-1 sm:mt-2 inline-flex items-center gap-2 rounded border border-border bg-muted/50 px-2 py-1 w-fit">
+                                  <span className="text-[10px] sm:text-[11px] font-mono text-muted-foreground truncate">{msg.tag}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="p-2 sm:p-3">
+                        <form onSubmit={handleSendMessage} className="relative">
+                          <input
+                            className="w-full rounded-md border border-border bg-muted px-3 py-2 pr-10 text-[12px] sm:text-[13px] placeholder-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                            placeholder="Message #general"
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                          />
+                          <button
+                            type="submit"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <Footer />
+        {/* Trusted By Section */}
+        <section className="border-t border-border py-8 sm:py-12 bg-muted/30 font-['Inter']">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 text-center">
+            <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground mb-6 sm:mb-8 uppercase tracking-widest">
+              Trusted by builders at
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-8 sm:gap-x-12 gap-y-6 sm:gap-y-8 opacity-50 transition-opacity duration-500 hover:opacity-70">
+              <span className="text-base sm:text-lg font-bold tracking-tighter">Acme Inc.</span>
+              <span className="text-base sm:text-lg font-bold tracking-tighter">Globex</span>
+              <span className="text-base sm:text-lg font-bold tracking-tighter">Soylent</span>
+              <span className="text-base sm:text-lg font-bold tracking-tighter">Initech</span>
+              <span className="text-base sm:text-lg font-bold tracking-tighter">Umbrella</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="px-4 sm:px-6 py-16 sm:py-24 lg:py-32 font-['Inter']">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-border bg-card/50 p-6 sm:p-8 transition-all duration-500 hover:bg-card"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-background/50 to-transparent opacity-50" />
+                  <div className="relative z-10">
+                    <div className="mb-6 sm:mb-8 inline-flex size-10 items-center justify-center rounded-lg border border-border bg-muted/50 text-foreground">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-[16px] sm:text-[17px] font-medium mb-2">{feature.title}</h3>
+                    <p className="text-[13px] sm:text-[14px] text-muted-foreground leading-relaxed font-normal">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <div className="absolute top-0 right-0 -mr-8 -mt-8 size-32 rounded-full bg-primary/10 blur-3xl transition-opacity opacity-0 group-hover:opacity-100" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison Section */}
+        <section className="relative border-t border-border bg-muted/30 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 font-['Inter']">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="mb-12 sm:mb-16 text-center">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight mb-3 sm:mb-4">
+                Not Another Social Network
+              </h2>
+              <p className="text-[14px] sm:text-[16px] text-muted-foreground font-light">
+                See why thousands of developers are making the switch.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                <div className="overflow-hidden rounded-xl border border-border bg-card">
+                  <div className="grid grid-cols-12 border-b border-border px-3 sm:px-4 py-3 sm:py-4 text-[11px] sm:text-[13px] font-medium text-muted-foreground uppercase tracking-wider bg-muted/30">
+                    <div className="col-span-4 pl-1 sm:pl-2">Feature</div>
+                    <div className="col-span-4 opacity-60">Traditional</div>
+                    <div className="col-span-4 text-primary">DevConnect</div>
+                  </div>
+
+                  {comparisonData.map((row, index) => (
+                    <div
+                      key={index}
+                      className="group grid grid-cols-12 items-center border-b border-border last:border-0 px-3 sm:px-4 py-4 sm:py-5 transition-colors hover:bg-muted/30"
+                    >
+                      <div className="col-span-4 flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2">
+                        <span className="text-[13px] sm:text-[15px] font-medium">{row.feature}</span>
+                      </div>
+                      <div className="col-span-4 text-[12px] sm:text-[14px] text-muted-foreground font-light">
+                        {row.traditional}
+                      </div>
+                      <div className="col-span-4 text-[12px] sm:text-[14px] font-medium flex items-center gap-1 sm:gap-2">
+                        <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="truncate">{row.devconnect}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative overflow-hidden px-4 sm:px-6 py-16 sm:py-24 lg:py-32 font-['Inter']">
+          <div className="mx-auto max-w-2xl text-center relative z-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-medium tracking-tight mb-4 sm:mb-6">
+              Ready for focused collaboration?
+            </h2>
+            <p className="text-[14px] sm:text-[16px] text-muted-foreground mb-8 sm:mb-10 font-light max-w-lg mx-auto px-4">
+              Join the community built for meaningful developer interactions. Open source, free forever for individuals.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
+              <Button asChild size="lg" className="rounded-full px-8 shadow-[0_0_20px_rgba(94,106,210,0.3)] w-full sm:w-auto">
+                <Link to="/signup">Get Started for Free</Link>
+              </Button>
+              <Button variant="outline" size="lg" className="rounded-full px-8 w-full sm:w-auto" asChild>
+                <Link to="/feed">View Documentation</Link>
+              </Button>
+            </div>
+          </div>
         </section>
       </main>
+
+      <Footer />
     </div>
   );
 };

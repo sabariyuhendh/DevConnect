@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "check:watch": "tsc --noEmit --watch",
+    "validate": "npm run check && npm run lint"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

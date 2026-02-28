@@ -113,7 +113,7 @@ const Profile = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* Cover Photo & Profile Header */}
         <div className="relative mb-8">
           <div className="h-48 lg:h-64 bg-gradient-to-r from-gray-400 via-gray-500 to-gray-600 rounded-lg"></div>

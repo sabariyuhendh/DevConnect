@@ -117,9 +117,7 @@ const Feed = () => {
   };
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Feed */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             {/* Create Post */}
@@ -378,8 +376,6 @@ const Feed = () => {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
   );
 };
 
