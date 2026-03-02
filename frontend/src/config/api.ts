@@ -65,9 +65,9 @@ export async function apiRequest(
       const user = JSON.parse(userStr);
       token = user.token;
       
-      // Debug: Log token format
+      // Debug: Log token status (not the actual token)
       if (token) {
-        console.log('📡 Token found, length:', token.length, 'starts with:', token.substring(0, 20) + '...');
+        console.log('📡 Token found, length:', token.length);
       } else {
         console.log('⚠️  dc_user exists but no token field');
       }

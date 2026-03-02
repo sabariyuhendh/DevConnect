@@ -27,7 +27,7 @@ declare global {
 export const protect: RequestHandler = async (req, _res, next) => {
   try {
     const header = req.headers.authorization;
-    console.log('[Auth] Authorization header:', header ? `${header.substring(0, 30)}...` : 'MISSING');
+    console.log('[Auth] Authorization header:', header ? 'Present (Bearer token)' : 'MISSING');
     
     const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : null;
     
@@ -37,7 +37,6 @@ export const protect: RequestHandler = async (req, _res, next) => {
     }
 
     console.log('[Auth] Token extracted, length:', token.length);
-    console.log('[Auth] Token preview:', token.substring(0, 20) + '...');
     
     const payload = verifyToken(token);
     console.log('[Auth] Token verified for user ID:', payload.id);
