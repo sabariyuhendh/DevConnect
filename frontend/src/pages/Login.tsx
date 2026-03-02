@@ -57,6 +57,7 @@ const Login = () => {
       });
 
       console.log('✅ Login successful');
+      console.log('📦 Login response:', data);
 
       // Store token separately for API requests
       if (data.token) {
@@ -70,10 +71,12 @@ const Login = () => {
         username: data.user?.username,
         firstName: data.user?.firstName,
         lastName: data.user?.lastName,
+        role: data.user?.role,
         profilePicture: data.user?.profilePicture,
         token: data.token
       };
 
+      console.log('👤 Storing user data:', userData);
       setUser(userData);
 
       toast({

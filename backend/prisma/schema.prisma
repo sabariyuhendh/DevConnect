@@ -16,6 +16,7 @@ model User {
   username                                        String               @unique
   password                                        String?
   provider                                        String?
+  role                                            UserRole             @default(USER)
   bio                                             String?
   title                                           String?
   company                                         String?
@@ -698,4 +699,12 @@ enum ApplicationStatus {
   ACCEPTED      // Offer accepted
   REJECTED      // Application rejected
   WITHDRAWN     // Applicant withdrew
+}
+
+enum UserRole {
+  USER          // Regular user
+  COMPANY_HR    // HR role for job posting
+  EVENT_HOST    // Event hosting role
+  ADMIN         // Admin role
+  SUPER_ADMIN   // Super admin role
 }

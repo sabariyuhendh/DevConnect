@@ -16,6 +16,8 @@ import profileRoutes from './src/routes/profileRoutes';
 import jobRoutes from './src/routes/jobRoutes';
 import eventRoutes from './src/routes/eventRoutes';
 import caveRoutes from './src/routes/caveRoutes';
+import adminRoutes from './src/routes/adminRoutes';
+import superAdminRoutes from './src/routes/superAdminRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -106,6 +108,8 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/cave', caveRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/superadmin', superAdminRoutes);
 
 // Health check endpoint with MCP module info
 app.get('/health', (req, res) => {

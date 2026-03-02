@@ -29,6 +29,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +71,8 @@ const App = () => (
                 <Route path="/post/:id" element={<PostDetailPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/superadmin" element={<SuperAdminDashboard />} />
                 <Route path="/notifications" element={<NotFound />} />
                 <Route path="/u/:username" element={<UserProfile />} />
               </Route>

@@ -23,5 +23,18 @@ router.get('/my/saved', jobController.getSavedJobs);
 router.get('/admin/pending', jobController.getPendingJobs);
 router.post('/admin/:id/approve', jobController.approveJob);
 router.post('/admin/:id/reject', jobController.rejectJob);
+router.patch('/admin/:id/status', async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (status === 'APPROVED') {
+      return jobController.approveJob(req, res);
+    } else if (status === 'REJECTED') {
+      return jobController.rejectJob(req, res);
+    }
+    res.status(400).json({ message: 'Invalid status' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

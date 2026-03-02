@@ -61,6 +61,7 @@ export const signup = async (req: Request, res: Response) => {
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
         profilePicture: user.profilePicture,
         provider: user.provider
       }
@@ -109,6 +110,7 @@ export const login = async (req: Request, res: Response) => {
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
         profilePicture: user.profilePicture,
         provider: user.provider
       },
@@ -124,7 +126,64 @@ export const login = async (req: Request, res: Response) => {
 // Get current user
 export const me = async (req: Request, res: Response) => {
   const user = (req as any).user;
+  console.log('[Auth] /me endpoint called for user:', user?.username, 'Role:', user?.role);
   return res.json({ user });
+};
+
+// Refresh token - generates a new token with current user data
+export const refreshToken = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  
+  try {
+    // Fetch fresh user data from database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        profilePicture: true,
+        provider: true,
+        isActive: true
+      }
+    });
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: 'User not found or inactive' });
+    }
+    
+    // Generate new token
+    const token = signToken({ id: user.id });
+    
+    console.log('[Auth] Token refreshed for user:', user.username, 'Role:', user.role);
+    
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        provider: user.provider
+      }
+    });
+  } catch (error) {
+    console.error('[Auth] Token refresh error:', error);
+    return res.status(500).json({
+      message: 'Failed to refresh token',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 };
 
 // Check username availability

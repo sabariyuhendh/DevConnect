@@ -7,6 +7,7 @@ type User = {
   username?: string;
   firstName?: string;
   lastName?: string;
+  role?: 'USER' | 'COMPANY_HR' | 'EVENT_HOST' | 'ADMIN' | 'SUPER_ADMIN';
   profilePicture?: string;
   bio?: string;
   title?: string;

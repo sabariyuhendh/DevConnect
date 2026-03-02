@@ -8,7 +8,8 @@ import {
   githubCallback,
   googleOAuth,
   googleCallback,
-  logout
+  logout,
+  refreshToken
 } from '../controllers/authController';
 import { protect } from '../middleware/auth';
 
@@ -19,6 +20,7 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.post('/logout', protect, logout);
 router.get('/me', protect, me);
+router.post('/refresh', protect, refreshToken);
 
 // Username availability check
 router.get('/check-username', checkUsername);

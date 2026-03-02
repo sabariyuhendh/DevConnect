@@ -11,7 +11,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "check": "tsc --noEmit",
-    "check:watch": "tsc --noEmit --watch"
+    "check:watch": "tsc --noEmit --watch",
+    "create-admin": "ts-node scripts/create-admin.ts",
+    "diagnose-auth": "ts-node scripts/diagnose-auth.ts"
   },
   "keywords": [],
   "author": "",

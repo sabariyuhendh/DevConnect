@@ -20,9 +20,11 @@ import {
   ExternalLink,
   Loader2,
   Search,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import { apiRequest } from '@/config/api';
+import { CreateJobModal } from '@/components/CreateJobModal';
 
 interface Job {
   id: string;
@@ -53,6 +55,7 @@ const Jobs = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [createJobOpen, setCreateJobOpen] = useState(false);
   const [filters, setFilters] = useState({
     locationType: 'all',
     employmentType: 'all',
@@ -158,11 +161,19 @@ const Jobs = () => {
     <div>
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Find Your Next Opportunity</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Browse {jobs.length}+ verified job postings from top companies
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Find Your Next Opportunity</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Browse {jobs.length}+ verified job postings from top companies
+            </p>
+          </div>
+          <Button onClick={() => setCreateJobOpen(true)} className="flex-shrink-0">
+            <Plus className="mr-2 h-4 w-4" />
+            Post Job
+          </Button>
         </div>
+      </div>
 
         {/* Search and Filters */}
         <Card className="mb-4 sm:mb-6">
@@ -354,7 +365,17 @@ const Jobs = () => {
             </Card>
           )}
         </div>
-      </div>
+
+      {/* Create Job Modal */}
+      <CreateJobModal
+        open={createJobOpen}
+        onOpenChange={setCreateJobOpen}
+        onSuccess={() => {
+          setPage(1);
+          fetchJobs(1, true);
+        }}
+      />
+    </div>
   );
 };
 

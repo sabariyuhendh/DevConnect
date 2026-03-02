@@ -64,6 +64,15 @@ export async function apiRequest(
     if (userStr) {
       const user = JSON.parse(userStr);
       token = user.token;
+      
+      // Debug: Log token format
+      if (token) {
+        console.log('📡 Token found, length:', token.length, 'starts with:', token.substring(0, 20) + '...');
+      } else {
+        console.log('⚠️  dc_user exists but no token field');
+      }
+    } else {
+      console.log('⚠️  No dc_user in localStorage');
     }
   } catch (error) {
     console.error('❌ Failed to parse user from localStorage:', error);
