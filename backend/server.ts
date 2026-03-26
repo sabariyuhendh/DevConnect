@@ -8,6 +8,7 @@ import { CORS_ORIGIN, NODE_ENV, PORT } from './src/config/env';
 import { AppError, globalErrorHandler } from './src/utils/errors';
 import { setupCaveSocket } from './src/websocket/caveSocket';
 import { setupFeedSocket } from './src/websocket/feedSocket';
+import { setupMessageSocket } from './src/websocket/messageSocket';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes';
@@ -18,6 +19,7 @@ import eventRoutes from './src/routes/eventRoutes';
 import caveRoutes from './src/routes/caveRoutes';
 import adminRoutes from './src/routes/adminRoutes';
 import superAdminRoutes from './src/routes/superAdminRoutes';
+import messageRoutes from './src/routes/messageRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,6 +39,9 @@ setupCaveSocket(io);
 
 // Setup Feed WebSocket namespace
 setupFeedSocket(io);
+
+// Setup Message WebSocket namespace
+setupMessageSocket(io);
 
 // Make io available globally for broadcasting
 app.set('io', io);
@@ -110,6 +115,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/cave', caveRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/superadmin', superAdminRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check endpoint with MCP module info
 app.get('/health', (req, res) => {
@@ -122,7 +128,8 @@ app.get('/health', (req, res) => {
       identity: { status: 'active', version: '1.0.0' },
       jobs: { status: 'active', version: '1.0.0' },
       events: { status: 'active', version: '1.0.0' },
-      cave: { status: 'active', version: '1.0.0' }
+      cave: { status: 'active', version: '1.0.0' },
+      messaging: { status: 'active', version: '1.0.0', capabilities: ['direct-messages', 'real-time', 'markdown', 'typing-indicators', 'read-receipts'] }
     },
     architecture: 'monolith',
     mcpReady: true

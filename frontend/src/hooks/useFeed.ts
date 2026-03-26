@@ -61,6 +61,23 @@ export function useFeed() {
     }
   }, []);
 
+  // Fetch user posts
+  const fetchUserPosts = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiRequest(`/api/posts?userId=${userId}`, {
+        method: 'GET'
+      });
+      setPosts(response.data || response);
+    } catch (err: any) {
+      console.error('❌ Failed to fetch user posts:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch connection recommendations
   const fetchRecommendations = useCallback(async () => {
     try {
@@ -210,6 +227,7 @@ export function useFeed() {
     loading,
     error,
     fetchFeed,
+    fetchUserPosts,
     fetchRecommendations,
     createPost,
     updatePost,

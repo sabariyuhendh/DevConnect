@@ -2,28 +2,37 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMessaging } from '@/hooks/useMessaging';
+import MessageInput from '@/components/MessageInput';
+import MessageContent from '@/components/MessageContent';
 import {
   Search,
-  Send,
   MoreVertical,
   Phone,
   Video,
-  Smile,
-  Mic,
-  Code,
-  Link2,
-  GitPullRequest,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 
 const Messages = () => {
   const { theme } = useTheme();
-  const [selectedChat, setSelectedChat] = useState<string>('1');
-  const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCommands, setShowCommands] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const commandsRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    conversations,
+    currentConversation,
+    messages,
+    loading,
+    connected,
+    typingUsers,
+    fetchConversations,
+    selectConversation,
+    sendMessage,
+    sendTypingIndicator,
+    markAsRead
+  } = useMessaging();
 
   // Theme-aware colors
   const colors = {
@@ -43,240 +52,306 @@ const Messages = () => {
     ownMessageBorder: theme === 'dark' ? 'border-blue-600/30' : 'border-blue-200',
     messageText: theme === 'dark' ? 'text-gray-200' : 'text-gray-800',
     messageBorder: theme === 'dark' ? 'border-gray-700/50' : 'border-gray-200',
-    codeBg: theme === 'dark' ? 'bg-black/50' : 'bg-gray-900',
-    codeHeader: theme === 'dark' ? 'bg-gray-900/80' : 'bg-gray-800',
-    commandBg: theme === 'dark' ? 'bg-[#141414]' : 'bg-white',
-    commandHover: theme === 'dark' ? 'hover:bg-gray-800/50' : 'hover:bg-gray-100',
   };
 
-  const conversations = [
-    { id: '1', name: 'Sarah Chen', avatar: 'SC', lastMessage: 'Thanks for the React tips! Really helpful 🚀', timestamp: '2 min', online: true },
-    { id: '2', name: 'Marcus Rodriguez', avatar: 'MR', lastMessage: 'Great article on microservices!', timestamp: '1 hr', online: false },
-    { id: '3', name: 'Ada Lovelace', avatar: 'AL', lastMessage: 'Check out the new algorithm.', timestamp: '3 hr', online: false }
-  ];
-
-  const messages = [
-    { id: '1', sender: 'Sarah Chen', avatar: 'SC', content: 'Hey! I saw your post about React best practices. Really insightful!', timestamp: '10:30 AM', isOwn: false },
-    { id: '2', sender: 'You', avatar: 'JD', content: 'Thanks! I\'m glad you found it helpful. Are you working on any React projects right now?', timestamp: '10:32 AM', isOwn: true },
-    { id: '3', sender: 'Sarah Chen', avatar: 'SC', content: 'Yes! I\'m building a dashboard with React and TypeScript. Your tips on component composition came at the perfect time.', timestamp: '10:35 AM', isOwn: false },
-    { id: '4', sender: 'Sarah Chen', avatar: 'SC', content: 'I\'m trying to abstract a card component like this:', timestamp: '10:35 AM', isOwn: false },
-    { id: '5', sender: 'Sarah Chen', avatar: 'SC', content: 'code', timestamp: '10:36 AM', isOwn: false, isCode: true },
-    { id: '6', sender: 'Sarah Chen', avatar: 'SC', content: 'I\'m using Tailwind CSS with Headless UI. The combination is really powerful for building accessible', timestamp: '10:38 AM', isOwn: false }
-  ];
-
-  const commands = [
-    { id: 'snippet', icon: <Code className="h-4 w-4" />, label: '/snippet', description: 'Insert code block' },
-    { id: 'link', icon: <Link2 className="h-4 w-4" />, label: '/link', description: 'Add hyperlink' },
-    { id: 'pr', icon: <GitPullRequest className="h-4 w-4" />, label: '/pr', description: 'Link Pull Request' }
-  ];
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setMessageInput(value);
-    if (value === '/' || (value.startsWith('/') && !value.includes(' ') && value.length > 0)) {
-      setShowCommands(true);
-    } else {
-      setShowCommands(false);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (messageInput.trim() && !showCommands) {
-      console.log('Sending message:', messageInput);
-      setMessageInput('');
-      setShowCommands(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setShowCommands(false);
-      setMessageInput('');
-    } else if (e.key === 'Enter' && !showCommands) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleCommandSelect = (command: typeof commands[0]) => {
-    setMessageInput('');
-    setShowCommands(false);
-    console.log('Selected command:', command.id);
-    inputRef.current?.focus();
-  };
-
+  // Fetch conversations on mount
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (commandsRef.current && !commandsRef.current.contains(event.target as Node) &&
-          inputRef.current && !inputRef.current.contains(event.target as Node)) {
-        setShowCommands(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    fetchConversations();
+  }, [fetchConversations]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (messageInput === '') {
-      setShowCommands(false);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Mark messages as read when conversation changes
+  useEffect(() => {
+    if (currentConversation) {
+      markAsRead(currentConversation.id);
     }
-  }, [messageInput]);
+  }, [currentConversation, markAsRead]);
+
+  // Filter conversations by search query
+  const filteredConversations = conversations.filter(conv => {
+    const otherUser = conv.members[0];
+    const name = `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || otherUser.username;
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Get current user from localStorage
+  const getCurrentUserId = () => {
+    const userData = localStorage.getItem('dc_user');
+    if (userData) {
+      return JSON.parse(userData).id;
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
+
+  // Handle send message
+  const handleSendMessage = (content: string) => {
+    if (currentConversation && content.trim()) {
+      sendMessage(currentConversation.id, content);
+    }
+  };
+
+  // Handle typing indicator
+  const handleTyping = (isTyping: boolean) => {
+    if (currentConversation) {
+      sendTypingIndicator(currentConversation.id, isTyping);
+    }
+  };
+
+  // Format timestamp
+  const formatTimestamp = (date: string) => {
+    const messageDate = new Date(date);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - messageDate.getTime()) / 60000);
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} min`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hr`;
+    return messageDate.toLocaleDateString();
+  };
+
+  // Format message time
+  const formatMessageTime = (date: string) => {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Get other user from conversation
+  const getOtherUser = (conv: typeof conversations[0]) => {
+    return conv.members[0];
+  };
+
+  // Get typing users display
+  const getTypingDisplay = () => {
+    if (typingUsers.size === 0) return null;
+    const typingUsersList = Array.from(typingUsers);
+    if (typingUsersList.length === 1) return 'typing...';
+    return `${typingUsersList.length} people typing...';
+  };
 
   return (
     <div className={`h-full w-full flex ${colors.bg} p-6 gap-6 items-center`}>
-      {/* Left Sidebar - Floating with Rounded Corners */}
+      {/* Left Sidebar - Conversations List */}
       <div className={`w-[320px] flex flex-col ${colors.sidebar} border ${colors.border} flex-shrink-0 rounded-xl shadow-2xl overflow-hidden h-[85vh]`}>
         <div className={`flex items-center gap-1 p-3 ${colors.header} border-b ${colors.border}`}>
-          <Button variant="ghost" size="sm" className={`flex-1 h-9 text-xs font-medium ${colors.selected} ${colors.text} hover:text-foreground rounded-lg`}>DMs</Button>
-          <Button variant="ghost" size="sm" className={`flex-1 h-9 text-xs font-medium ${colors.textMuted} hover:text-foreground rounded-lg`}>Groups</Button>
-          <Button variant="ghost" size="sm" className={`flex-1 h-9 text-xs font-medium ${colors.textMuted} hover:text-foreground rounded-lg`}>Explore</Button>
+          <Button variant="ghost" size="sm" className={`flex-1 h-9 text-xs font-medium ${colors.selected} ${colors.text} hover:text-foreground rounded-lg`}>
+            DMs
+          </Button>
+          <Button variant="ghost" size="sm" className={`flex-1 h-9 text-xs font-medium ${colors.textMuted} hover:text-foreground rounded-lg`}>
+            Groups
+          </Button>
         </div>
+        
         <div className={`flex items-center justify-between px-4 py-3 border-b ${colors.border}`}>
-          <h3 className={`text-xs font-bold uppercase tracking-wider ${colors.textMuted} font-mono`}>MESSAGES</h3>
-          <button className={`flex items-center gap-1 text-xs ${colors.textMuted} hover:text-foreground transition-colors font-mono`}>
-            <ArrowLeft className="h-3 w-3" />Back
-          </button>
+          <h3 className={`text-xs font-bold uppercase tracking-wider ${colors.textMuted} font-mono`}>
+            MESSAGES {conversations.length > 0 && `(${conversations.length})`}
+          </h3>
+          <div className={`flex items-center gap-1 text-xs ${colors.textMuted} font-mono`}>
+            <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span>{connected ? 'Online' : 'Offline'}</span>
+          </div>
         </div>
+        
         <div className={`p-4 border-b ${colors.border}`}>
           <div className="relative">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 ${colors.textMuted}`} />
-            <Input placeholder="Search conversations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`pl-9 h-9 text-xs ${colors.input} border ${colors.border} ${colors.text} placeholder:${colors.textMuted} font-mono rounded-lg`} />
+            <Input
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`pl-9 h-9 text-xs ${colors.input} border ${colors.border} ${colors.text} placeholder:${colors.textMuted} font-mono rounded-lg`}
+            />
           </div>
         </div>
+        
         <div className="flex-1 overflow-y-auto space-y-1 p-2">
-          {conversations.map((conv) => (
-            <div key={conv.id} onClick={() => setSelectedChat(conv.id)} className={`px-3 py-3 rounded-xl cursor-pointer transition-all border-l-2 ${selectedChat === conv.id ? `${colors.selected} border-l-green-500` : `border-l-transparent ${colors.hover}`}`}>
-              <div className="flex items-start gap-2.5">
-                <div className="flex items-center gap-2">
-                  {conv.online && <div className="w-2 h-2 rounded-full bg-green-500" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className={`font-semibold text-sm truncate ${colors.text} font-mono`}>{conv.name}</h4>
-                    <span className={`text-[10px] ${colors.textMuted} flex-shrink-0 ml-2 font-mono`}>{conv.timestamp}</span>
-                  </div>
-                  <p className={`text-xs ${colors.textMuted} truncate leading-tight font-mono`}>{conv.lastMessage}</p>
-                </div>
-              </div>
+          {loading && conversations.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className={`h-6 w-6 animate-spin ${colors.textMuted}`} />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Terminal Window */}
-      <div className="flex-1 h-[85vh]">
-        <div className={`w-full h-full ${colors.terminal} rounded-xl shadow-2xl overflow-hidden flex flex-col border ${colors.border}`}>
-          {/* Terminal Header */}
-          <div className={`h-10 ${colors.header} border-b ${colors.border} flex items-center justify-between px-4 flex-shrink-0`}>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-              <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+          ) : filteredConversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+              <MessageSquare className={`h-12 w-12 ${colors.textMuted} mb-2`} />
+              <p className={`text-sm ${colors.textMuted} font-mono`}>
+                {searchQuery ? 'No conversations found' : 'No conversations yet'}
+              </p>
             </div>
-            <div className={`flex items-center gap-3 ${colors.text} text-xs font-mono`}>
-              <span>Sarah Chen</span>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <span>Online</span>
-              </div>
-            </div>
-            <div className={`flex items-center gap-3 ${colors.textMuted}`}>
-              <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}><Phone className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}><Video className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}><MoreVertical className="h-3.5 w-3.5" /></Button>
-            </div>
-          </div>
-
-          {/* Terminal Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 font-mono text-sm">
-            {messages.map((msg, idx) => {
-              const showAvatar = idx === 0 || messages[idx - 1]?.sender !== msg.sender;
+          ) : (
+            filteredConversations.map((conv) => {
+              const otherUser = getOtherUser(conv);
+              const displayName = `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || otherUser.username;
+              const isSelected = currentConversation?.id === conv.id;
+              
               return (
-                <div key={msg.id} className={`flex items-start gap-3 ${msg.isOwn ? 'flex-row-reverse' : ''}`}>
-                  {!msg.isOwn && showAvatar && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">{msg.avatar}</div>
-                  )}
-                  {!msg.isOwn && !showAvatar && <div className="w-8 flex-shrink-0" />}
-                  <div className={`flex flex-col ${msg.isOwn ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                    {!msg.isOwn && showAvatar && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>{msg.sender}</span>
-                        <span className={`text-[10px] ${colors.textMuted}`}>{msg.timestamp}</span>
-                      </div>
-                    )}
-                    <div className={`${msg.isOwn ? `${colors.ownMessageBg} ${colors.ownMessageText} border ${colors.ownMessageBorder} rounded-xl` : `${colors.messageBg} ${colors.messageText} border ${colors.messageBorder} rounded-xl`} ${msg.isCode ? 'p-0 overflow-hidden w-full' : 'px-4 py-2'}`}>
-                      {msg.isCode ? (
-                        <div className={`${colors.codeBg} rounded-xl overflow-hidden w-full border ${colors.border}`}>
-                          <div className={`flex items-center justify-between px-3 py-1.5 ${colors.codeHeader} border-b ${colors.border}`}>
-                            <span className={`text-[10px] ${colors.textMuted} font-mono uppercase tracking-wider`}>typescript</span>
-                            <div className="flex gap-1">
-                              <div className="w-2 h-2 rounded-full bg-red-500/50" />
-                              <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
-                              <div className="w-2 h-2 rounded-full bg-green-500/50" />
-                            </div>
-                          </div>
-                          <pre className={`p-3 text-xs overflow-x-auto ${theme === 'dark' ? 'bg-black/30' : 'bg-gray-800'}`}>
-                            <code>
-                              <span className="text-purple-400">const</span> <span className="text-yellow-300">Component</span> = <span className="text-gray-400">()</span> <span className="text-purple-400">=&gt;</span> {'{'}
-                              {'\n  '}<span className="text-purple-400">return</span> (
-                              {'\n    '}<span className="text-gray-500">&lt;</span><span className="text-green-400">div</span> <span className="text-blue-300">className</span><span className="text-gray-500">=</span><span className="text-orange-400">"card"</span><span className="text-gray-500">&gt;</span>
-                              {'\n      '}<span className="text-gray-200">Hello World</span>
-                              {'\n    '}<span className="text-gray-500">&lt;/</span><span className="text-green-400">div</span><span className="text-gray-500">&gt;</span>
-                              {'\n  '});
-                              {'\n'}{'}'}
-                            </code>
-                          </pre>
-                        </div>
-                      ) : (
-                        <p className="leading-relaxed">{msg.content}</p>
+                <div
+                  key={conv.id}
+                  onClick={() => selectConversation(conv)}
+                  className={`px-3 py-3 rounded-xl cursor-pointer transition-all border-l-2 ${
+                    isSelected
+                      ? `${colors.selected} border-l-green-500`
+                      : `border-l-transparent ${colors.hover}`
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex items-center gap-2">
+                      {otherUser.isOnline && (
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
                       )}
                     </div>
-                    {msg.isOwn && <span className={`text-[10px] mt-1 px-2 ${colors.textMuted}`}>{msg.timestamp}</span>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className={`font-semibold text-sm truncate ${colors.text} font-mono`}>
+                          {displayName}
+                        </h4>
+                        {conv.lastMessage && (
+                          <span className={`text-[10px] ${colors.textMuted} flex-shrink-0 ml-2 font-mono`}>
+                            {formatTimestamp(conv.lastMessage.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                      {conv.lastMessage && (
+                        <p className={`text-xs ${colors.textMuted} truncate leading-tight font-mono`}>
+                          {conv.lastMessage.senderId === currentUserId ? 'You: ' : ''}
+                          {conv.lastMessage.content}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
-            })}
-          </div>
-
-          {/* Terminal Input */}
-          <div className={`${colors.header} p-3 border-t ${colors.border} relative flex-shrink-0`}>
-            {showCommands && (
-              <div ref={commandsRef} className={`absolute bottom-full left-4 mb-2 w-72 ${colors.commandBg} border ${colors.border} rounded-xl shadow-2xl overflow-hidden`}>
-                <div className={`px-3 py-2 border-b ${colors.border} flex justify-between items-center ${colors.header} rounded-t-xl`}>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider ${colors.textMuted} font-mono`}>COMMANDS</span>
-                  <span className={`text-[10px] ${colors.input} px-1.5 py-0.5 rounded-lg ${colors.text} border ${colors.border} font-mono`}>ESC</span>
-                </div>
-                <div className="py-1">
-                  {commands.map((cmd, i) => (
-                    <button key={cmd.id} onClick={() => handleCommandSelect(cmd)} className={`w-full px-3 py-2 ${colors.commandHover} cursor-pointer flex items-center gap-3 border-l-2 text-left transition-colors rounded-lg ${i === 0 ? `border-l-green-500 ${colors.selected}` : 'border-l-transparent'}`}>
-                      <div className={`text-sm ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>{cmd.icon}</div>
-                      <span className={`text-xs font-mono ${colors.text}`}>{cmd.label}</span>
-                      <span className={`text-[10px] ${colors.textMuted} ml-auto font-mono`}>{cmd.description}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className={`flex items-center gap-2 ${colors.input} border ${colors.border} rounded-xl px-3 py-2`}>
-              <span className={`font-mono text-sm ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>$</span>
-              <Input ref={inputRef} placeholder="Type a message..." value={messageInput} onChange={handleInputChange} onKeyDown={handleKeyPress} className={`flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm h-auto p-0 font-mono ${colors.text} placeholder:${colors.textMuted} shadow-none outline-none`} />
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className={`h-7 w-7 p-0 ${colors.hover} ${colors.textMuted} hover:text-foreground rounded-lg`}><Smile className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" className={`h-7 w-7 p-0 ${colors.hover} ${colors.textMuted} hover:text-foreground rounded-lg`}><Mic className="h-4 w-4" /></Button>
-                <Button size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-lg"><Send className="h-3.5 w-3.5" /></Button>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mt-2 px-1">
-              <div className={`flex gap-3 text-[10px] ${colors.textMuted} font-mono`}>
-                <span className={`flex items-center gap-1 ${theme === 'dark' ? 'hover:text-green-400' : 'hover:text-green-600'} cursor-pointer transition-colors`}><Code className="h-3 w-3" /> /snippet</span>
-                <span className={`flex items-center gap-1 ${theme === 'dark' ? 'hover:text-green-400' : 'hover:text-green-600'} cursor-pointer transition-colors`}><Link2 className="h-3 w-3" /> /link</span>
-                <span className={`flex items-center gap-1 ${theme === 'dark' ? 'hover:text-green-400' : 'hover:text-green-600'} cursor-pointer transition-colors`}><GitPullRequest className="h-3 w-3" /> /pr</span>
-              </div>
-              <span className={`text-[10px] ${colors.textMuted} font-mono`}>Press / for commands</span>
-            </div>
-          </div>
+            })
+          )}
         </div>
+      </div>
+
+      {/* Terminal Window - Messages */}
+      <div className="flex-1 h-[85vh]">
+        {!currentConversation ? (
+          <div className={`w-full h-full ${colors.terminal} rounded-xl shadow-2xl overflow-hidden flex flex-col border ${colors.border} items-center justify-center`}>
+            <MessageSquare className={`h-16 w-16 ${colors.textMuted} mb-4`} />
+            <p className={`text-lg ${colors.text} font-mono`}>Select a conversation to start messaging</p>
+            <p className={`text-sm ${colors.textMuted} font-mono mt-2`}>Choose from your existing conversations or start a new one</p>
+          </div>
+        ) : (
+          <div className={`w-full h-full ${colors.terminal} rounded-xl shadow-2xl overflow-hidden flex flex-col border ${colors.border}`}>
+            {/* Terminal Header */}
+            <div className={`h-10 ${colors.header} border-b ${colors.border} flex items-center justify-between px-4 flex-shrink-0`}>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+              </div>
+              <div className={`flex items-center gap-3 ${colors.text} text-xs font-mono`}>
+                <span>
+                  {(() => {
+                    const otherUser = getOtherUser(currentConversation);
+                    return `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || otherUser.username;
+                  })()}
+                </span>
+                <div className="flex items-center gap-1">
+                  <div className={`w-1.5 h-1.5 rounded-full ${getOtherUser(currentConversation).isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+                  <span>{getOtherUser(currentConversation).isOnline ? 'Online' : 'Offline'}</span>
+                </div>
+              </div>
+              <div className={`flex items-center gap-3 ${colors.textMuted}`}>
+                <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}>
+                  <Phone className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}>
+                  <Video className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className={`h-6 w-6 hover:text-foreground ${colors.hover}`}>
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Terminal Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 font-mono text-sm">
+              {loading && messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className={`h-8 w-8 animate-spin ${colors.textMuted}`} />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className={`text-sm ${colors.textMuted}`}>No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((msg, idx) => {
+                  const isOwn = msg.senderId === currentUserId;
+                  const showAvatar = idx === 0 || messages[idx - 1]?.senderId !== msg.senderId;
+                  const sender = msg.sender;
+                  const displayName = `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || sender.username;
+                  
+                  return (
+                    <div key={msg.id} className={`flex items-start gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
+                      {!isOwn && showAvatar && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
+                          {sender.username.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      {!isOwn && !showAvatar && <div className="w-8 flex-shrink-0" />}
+                      
+                      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                        {!isOwn && showAvatar && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                              {displayName}
+                            </span>
+                            <span className={`text-[10px] ${colors.textMuted}`}>
+                              {formatMessageTime(msg.createdAt)}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className={`${
+                          isOwn
+                            ? `${colors.ownMessageBg} ${colors.ownMessageText} border ${colors.ownMessageBorder}`
+                            : `${colors.messageBg} ${colors.messageText} border ${colors.messageBorder}`
+                        } rounded-xl px-4 py-2`}>
+                          <MessageContent content={msg.content} />
+                        </div>
+                        
+                        {isOwn && (
+                          <span className={`text-[10px] mt-1 px-2 ${colors.textMuted}`}>
+                            {formatMessageTime(msg.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              
+              {/* Typing indicator */}
+              {getTypingDisplay() && (
+                <div className="flex items-center gap-2">
+                  <div className={`text-xs ${colors.textMuted} italic font-mono`}>
+                    {getTypingDisplay()}
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <MessageInput
+              onSend={handleSendMessage}
+              onTyping={handleTyping}
+              placeholder="Type a message... (Markdown supported)"
+              disabled={!connected}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
