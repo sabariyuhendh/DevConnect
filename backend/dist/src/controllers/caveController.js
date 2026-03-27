@@ -6,11 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getReputation = exports.incrementReadCount = exports.toggleBookmark = exports.getTrendArticles = exports.getChatMessages = exports.joinChatRoom = exports.createChatRoom = exports.getChatRooms = exports.deleteNote = exports.updateNote = exports.getNotes = exports.createNote = exports.deleteTask = exports.updateTask = exports.getTasks = exports.createTask = exports.getFocusSessions = exports.completeFocusSession = exports.startFocusSession = void 0;
 const client_1 = __importDefault(require("../../prisma/client"));
 const apiResponse_1 = require("../utils/apiResponse");
+const helpers_1 = require("../utils/helpers");
 // Focus Sessions
 const startFocusSession = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { mode, duration } = req.body;
         const session = await client_1.default.caveFocusSession.create({
             data: {
@@ -20,7 +21,7 @@ const startFocusSession = async (req, res) => {
                 completed: false,
             },
         });
-        return (0, apiResponse_1.successResponse)(res, session, 'Focus session started');
+        return (0, apiResponse_1.successResponse)(res, session, 200, 'Focus session started');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -30,8 +31,8 @@ exports.startFocusSession = startFocusSession;
 const completeFocusSession = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const { sessionId } = req.params;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+        const sessionId = (0, helpers_1.getStringParam)(req.params.sessionId);
         const session = await client_1.default.caveFocusSession.update({
             where: { id: sessionId },
             data: {
@@ -40,8 +41,10 @@ const completeFocusSession = async (req, res) => {
             },
         });
         // Update reputation
-        await updateReputation(userId, 'focus_completed');
-        return (0, apiResponse_1.successResponse)(res, session, 'Focus session completed');
+        if (userId) {
+            await updateReputation(userId, 'focus_completed');
+        }
+        return (0, apiResponse_1.successResponse)(res, session, 200, 'Focus session completed');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -51,7 +54,7 @@ exports.completeFocusSession = completeFocusSession;
 const getFocusSessions = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { limit = 10 } = req.query;
         const sessions = await client_1.default.caveFocusSession.findMany({
             where: { userId },
@@ -69,7 +72,7 @@ exports.getFocusSessions = getFocusSessions;
 const createTask = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { title, description, priority, dueDate } = req.body;
         const task = await client_1.default.caveTask.create({
             data: {
@@ -80,7 +83,7 @@ const createTask = async (req, res) => {
                 dueDate: dueDate ? new Date(dueDate) : null,
             },
         });
-        return (0, apiResponse_1.successResponse)(res, task, 'Task created', 201);
+        return (0, apiResponse_1.successResponse)(res, task, 201, 'Task created');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -90,7 +93,7 @@ exports.createTask = createTask;
 const getTasks = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { status } = req.query;
         const where = { userId };
         if (status)
@@ -113,7 +116,7 @@ exports.getTasks = getTasks;
 const updateTask = async (req, res) => {
     var _a;
     try {
-        const { taskId } = req.params;
+        const taskId = (0, helpers_1.getStringParam)(req.params.taskId);
         const { title, description, priority, status, dueDate } = req.body;
         const data = {};
         if (title !== undefined)
@@ -127,7 +130,9 @@ const updateTask = async (req, res) => {
             if (status === 'COMPLETED') {
                 data.completedAt = new Date();
                 // Update reputation
-                await updateReputation((_a = req.user) === null || _a === void 0 ? void 0 : _a.id, 'task_completed');
+                if ((_a = req.user) === null || _a === void 0 ? void 0 : _a.id) {
+                    await updateReputation(req.user.id, 'task_completed');
+                }
             }
         }
         if (dueDate !== undefined)
@@ -136,7 +141,7 @@ const updateTask = async (req, res) => {
             where: { id: taskId },
             data,
         });
-        return (0, apiResponse_1.successResponse)(res, task, 'Task updated');
+        return (0, apiResponse_1.successResponse)(res, task, 200, 'Task updated');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -145,11 +150,11 @@ const updateTask = async (req, res) => {
 exports.updateTask = updateTask;
 const deleteTask = async (req, res) => {
     try {
-        const { taskId } = req.params;
+        const taskId = (0, helpers_1.getStringParam)(req.params.taskId);
         await client_1.default.caveTask.delete({
             where: { id: taskId },
         });
-        return (0, apiResponse_1.successResponse)(res, null, 'Task deleted');
+        return (0, apiResponse_1.successResponse)(res, null, 200, 'Task deleted');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -160,7 +165,7 @@ exports.deleteTask = deleteTask;
 const createNote = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { title, content } = req.body;
         const note = await client_1.default.caveNote.create({
             data: {
@@ -169,7 +174,7 @@ const createNote = async (req, res) => {
                 content,
             },
         });
-        return (0, apiResponse_1.successResponse)(res, note, 'Note created', 201);
+        return (0, apiResponse_1.successResponse)(res, note, 201, 'Note created');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -179,7 +184,7 @@ exports.createNote = createNote;
 const getNotes = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const notes = await client_1.default.caveNote.findMany({
             where: { userId },
             orderBy: { updatedAt: 'desc' },
@@ -193,7 +198,7 @@ const getNotes = async (req, res) => {
 exports.getNotes = getNotes;
 const updateNote = async (req, res) => {
     try {
-        const { noteId } = req.params;
+        const noteId = (0, helpers_1.getStringParam)(req.params.noteId);
         const { title, content } = req.body;
         const data = {};
         if (title !== undefined)
@@ -204,7 +209,7 @@ const updateNote = async (req, res) => {
             where: { id: noteId },
             data,
         });
-        return (0, apiResponse_1.successResponse)(res, note, 'Note updated');
+        return (0, apiResponse_1.successResponse)(res, note, 200, 'Note updated');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -213,11 +218,11 @@ const updateNote = async (req, res) => {
 exports.updateNote = updateNote;
 const deleteNote = async (req, res) => {
     try {
-        const { noteId } = req.params;
+        const noteId = (0, helpers_1.getStringParam)(req.params.noteId);
         await client_1.default.caveNote.delete({
             where: { id: noteId },
         });
-        return (0, apiResponse_1.successResponse)(res, null, 'Note deleted');
+        return (0, apiResponse_1.successResponse)(res, null, 200, 'Note deleted');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -245,7 +250,7 @@ exports.getChatRooms = getChatRooms;
 const createChatRoom = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const { name, description } = req.body;
         // Ensure name starts with #
         const roomName = name.startsWith('#') ? name : `#${name}`;
@@ -263,7 +268,7 @@ const createChatRoom = async (req, res) => {
                 userId,
             },
         });
-        return (0, apiResponse_1.successResponse)(res, room, 'Room created', 201);
+        return (0, apiResponse_1.successResponse)(res, room, 201, 'Room created');
     }
     catch (error) {
         if (error.code === 'P2002') {
@@ -276,15 +281,15 @@ exports.createChatRoom = createChatRoom;
 const joinChatRoom = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const { roomId } = req.params;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+        const roomId = (0, helpers_1.getStringParam)(req.params.roomId);
         const member = await client_1.default.caveRoomMember.create({
             data: {
                 roomId,
                 userId,
             },
         });
-        return (0, apiResponse_1.successResponse)(res, member, 'Joined room');
+        return (0, apiResponse_1.successResponse)(res, member, 200, 'Joined room');
     }
     catch (error) {
         if (error.code === 'P2002') {
@@ -296,7 +301,7 @@ const joinChatRoom = async (req, res) => {
 exports.joinChatRoom = joinChatRoom;
 const getChatMessages = async (req, res) => {
     try {
-        const { roomId } = req.params;
+        const roomId = (0, helpers_1.getStringParam)(req.params.roomId);
         const { limit = 50, before } = req.query;
         const where = { roomId };
         if (before) {
@@ -330,7 +335,7 @@ const getTrendArticles = async (req, res) => {
     var _a;
     try {
         const { tag, sort = 'trending', limit = 20 } = req.query;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         const where = {};
         if (tag) {
             where.tags = { has: tag };
@@ -368,8 +373,8 @@ exports.getTrendArticles = getTrendArticles;
 const toggleBookmark = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const { articleId } = req.params;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+        const articleId = (0, helpers_1.getStringParam)(req.params.articleId);
         const existing = await client_1.default.caveArticleBookmark.findUnique({
             where: {
                 userId_articleId: { userId, articleId },
@@ -383,7 +388,7 @@ const toggleBookmark = async (req, res) => {
                 where: { id: articleId },
                 data: { bookmarkCount: { decrement: 1 } },
             });
-            return (0, apiResponse_1.successResponse)(res, { bookmarked: false }, 'Bookmark removed');
+            return (0, apiResponse_1.successResponse)(res, { bookmarked: false }, 200, 'Bookmark removed');
         }
         else {
             await client_1.default.caveArticleBookmark.create({
@@ -393,7 +398,7 @@ const toggleBookmark = async (req, res) => {
                 where: { id: articleId },
                 data: { bookmarkCount: { increment: 1 } },
             });
-            return (0, apiResponse_1.successResponse)(res, { bookmarked: true }, 'Article bookmarked');
+            return (0, apiResponse_1.successResponse)(res, { bookmarked: true }, 200, 'Article bookmarked');
         }
     }
     catch (error) {
@@ -403,12 +408,12 @@ const toggleBookmark = async (req, res) => {
 exports.toggleBookmark = toggleBookmark;
 const incrementReadCount = async (req, res) => {
     try {
-        const { articleId } = req.params;
+        const articleId = (0, helpers_1.getStringParam)(req.params.articleId);
         await client_1.default.caveTrendArticle.update({
             where: { id: articleId },
             data: { readCount: { increment: 1 } },
         });
-        return (0, apiResponse_1.successResponse)(res, null, 'Read count updated');
+        return (0, apiResponse_1.successResponse)(res, null, 200, 'Read count updated');
     }
     catch (error) {
         return (0, apiResponse_1.errorResponse)(res, error.message, 500);
@@ -419,7 +424,7 @@ exports.incrementReadCount = incrementReadCount;
 const getReputation = async (req, res) => {
     var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (0, helpers_1.requireUserId)((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
         let reputation = await client_1.default.caveReputation.findUnique({
             where: { userId },
         });

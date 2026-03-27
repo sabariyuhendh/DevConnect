@@ -137,7 +137,7 @@ export const getSystemStats: RequestHandler = async (req, res, next) => {
         active: activeUsers,
         inactive: inactiveUsers,
         recentSignups,
-        byRole: usersByRole.reduce((acc, item) => {
+        byRole: usersByRole.reduce((acc: any, item: any) => {
           acc[item.role] = item._count;
           return acc;
         }, {} as Record<string, number>),

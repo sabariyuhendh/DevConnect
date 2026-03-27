@@ -7,59 +7,70 @@ exports.setupCaveSocket = void 0;
 const client_1 = __importDefault(require("../../prisma/client"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const setupCaveSocket = (io) => {
-    const caveNamespace = io.of('/cave');
     // Authentication middleware
-    caveNamespace.use(async (socket, next) => {
+    io.use(async (socket, next) => {
         var _a;
         try {
             const token = socket.handshake.auth.token || ((_a = socket.handshake.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(' ')[1]);
             if (!token) {
-                return next(new Error('Authentication error'));
+                return next(new Error('Authentication error: No token provided'));
             }
             const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-            socket.userId = decoded.userId;
-            socket.username = decoded.username;
+            // Fetch user details from database
+            const user = await client_1.default.user.findUnique({
+                where: { id: decoded.id },
+                select: { id: true, username: true, firstName: true, lastName: true }
+            });
+            if (!user) {
+                return next(new Error('Authentication error: User not found'));
+            }
+            socket.userId = user.id;
+            socket.username = user.username || `${user.firstName} ${user.lastName}`;
             next();
         }
         catch (error) {
-            next(new Error('Authentication error'));
+            console.error('Socket authentication error:', error);
+            next(new Error('Authentication error: Invalid token'));
         }
     });
-    caveNamespace.on('connection', (socket) => {
-        console.log(`User ${socket.userId} connected to Cave`);
+    io.on('connection', (socket) => {
+        console.log(`✅ User connected: ${socket.username} (${socket.userId})`);
         // Join room
         socket.on('join_room', async (roomId) => {
             try {
-                // Verify user is member or auto-join
-                let member = await client_1.default.caveRoomMember.findUnique({
-                    where: {
-                        roomId_userId: {
-                            roomId,
-                            userId: socket.userId,
-                        },
-                    },
-                });
-                if (!member) {
-                    // Auto-join user to room
-                    member = await client_1.default.caveRoomMember.create({
-                        data: {
-                            roomId,
-                            userId: socket.userId,
-                        },
-                    });
-                }
                 socket.join(roomId);
+                console.log(`🚪 ${socket.username} joined room: ${roomId}`);
                 // Notify room
-                caveNamespace.to(roomId).emit('user_joined', {
+                socket.to(roomId).emit('user_joined', {
                     userId: socket.userId,
                     username: socket.username,
-                    timestamp: new Date(),
+                    timestamp: new Date().toISOString()
                 });
-                // Get online users count
-                const socketsInRoom = await caveNamespace.in(roomId).fetchSockets();
-                caveNamespace.to(roomId).emit('room_stats', {
-                    onlineCount: socketsInRoom.length,
+                // Send message history
+                const messages = await client_1.default.caveChatMessage.findMany({
+                    where: { roomId },
+                    orderBy: { createdAt: 'asc' },
+                    take: 50,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                firstName: true,
+                                lastName: true
+                            }
+                        }
+                    }
                 });
+                const formattedMessages = messages.map((msg) => ({
+                    id: msg.id,
+                    content: msg.content,
+                    userId: msg.userId,
+                    username: msg.user.username || `${msg.user.firstName} ${msg.user.lastName}`,
+                    timestamp: msg.createdAt.toISOString(),
+                    roomId: msg.roomId
+                }));
+                socket.emit('message_history', formattedMessages);
             }
             catch (error) {
                 console.error('Error joining room:', error);
@@ -67,29 +78,28 @@ const setupCaveSocket = (io) => {
             }
         });
         // Leave room
-        socket.on('leave_room', async (roomId) => {
+        socket.on('leave_room', (roomId) => {
             socket.leave(roomId);
-            caveNamespace.to(roomId).emit('user_left', {
+            console.log(`🚪 ${socket.username} left room: ${roomId}`);
+            socket.to(roomId).emit('user_left', {
                 userId: socket.userId,
                 username: socket.username,
-                timestamp: new Date(),
-            });
-            // Update online count
-            const socketsInRoom = await caveNamespace.in(roomId).fetchSockets();
-            caveNamespace.to(roomId).emit('room_stats', {
-                onlineCount: socketsInRoom.length,
+                timestamp: new Date().toISOString()
             });
         });
         // Send message
         socket.on('send_message', async (data) => {
             try {
                 const { roomId, content } = data;
+                if (!content || !content.trim()) {
+                    return socket.emit('error', { message: 'Message content is required' });
+                }
                 // Save message to database
                 const message = await client_1.default.caveChatMessage.create({
                     data: {
                         roomId,
                         userId: socket.userId,
-                        content,
+                        content: content.trim()
                     },
                     include: {
                         user: {
@@ -97,16 +107,23 @@ const setupCaveSocket = (io) => {
                                 id: true,
                                 username: true,
                                 firstName: true,
-                                lastName: true,
-                                profilePicture: true,
-                            },
-                        },
-                    },
+                                lastName: true
+                            }
+                        }
+                    }
                 });
-                // Broadcast to room
-                caveNamespace.to(roomId).emit('new_message', message);
-                // Update reputation (async, don't wait)
-                updateReputation(socket.userId, 'chat_message').catch(console.error);
+                // Format message
+                const formattedMessage = {
+                    id: message.id,
+                    content: message.content,
+                    userId: message.userId,
+                    username: message.user.username || `${message.user.firstName} ${message.user.lastName}`,
+                    timestamp: message.createdAt.toISOString(),
+                    roomId: message.roomId
+                };
+                // Broadcast to room (including sender)
+                io.to(roomId).emit('message', formattedMessage);
+                console.log(`📨 Message sent in ${roomId} by ${socket.username}`);
             }
             catch (error) {
                 console.error('Error sending message:', error);
@@ -117,87 +134,23 @@ const setupCaveSocket = (io) => {
         socket.on('typing_start', (roomId) => {
             socket.to(roomId).emit('user_typing', {
                 userId: socket.userId,
-                username: socket.username,
+                username: socket.username
             });
         });
         socket.on('typing_stop', (roomId) => {
             socket.to(roomId).emit('user_stopped_typing', {
-                userId: socket.userId,
-            });
-        });
-        // Mark messages as read
-        socket.on('mark_read', async (data) => {
-            try {
-                await client_1.default.caveRoomMember.update({
-                    where: {
-                        roomId_userId: {
-                            roomId: data.roomId,
-                            userId: socket.userId,
-                        },
-                    },
-                    data: {
-                        lastReadAt: new Date(),
-                    },
-                });
-            }
-            catch (error) {
-                console.error('Error marking as read:', error);
-            }
-        });
-        // Focus session events
-        socket.on('focus_started', (data) => {
-            socket.broadcast.emit('user_focusing', {
-                userId: socket.userId,
-                username: socket.username,
-                duration: data.duration,
-            });
-        });
-        socket.on('focus_completed', (data) => {
-            socket.broadcast.emit('user_completed_focus', {
-                userId: socket.userId,
-                username: socket.username,
+                userId: socket.userId
             });
         });
         // Disconnect
-        socket.on('disconnect', async () => {
-            console.log(`User ${socket.userId} disconnected from Cave`);
-            // Get all rooms user was in
-            const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
-            // Notify each room
-            for (const roomId of rooms) {
-                caveNamespace.to(roomId).emit('user_left', {
-                    userId: socket.userId,
-                    username: socket.username,
-                    timestamp: new Date(),
-                });
-                // Update online count
-                const socketsInRoom = await caveNamespace.in(roomId).fetchSockets();
-                caveNamespace.to(roomId).emit('room_stats', {
-                    onlineCount: socketsInRoom.length,
-                });
-            }
+        socket.on('disconnect', (reason) => {
+            console.log(`❌ User disconnected: ${socket.username} (${reason})`);
+        });
+        // Error handling
+        socket.on('error', (error) => {
+            console.error(`Socket error from ${socket.username}:`, error);
         });
     });
-    return caveNamespace;
+    return io;
 };
 exports.setupCaveSocket = setupCaveSocket;
-// Helper function
-async function updateReputation(userId, action) {
-    let reputation = await client_1.default.caveReputation.findUnique({
-        where: { userId },
-    });
-    if (!reputation) {
-        reputation = await client_1.default.caveReputation.create({
-            data: { userId },
-        });
-    }
-    let pointsToAdd = 0;
-    if (action === 'chat_message')
-        pointsToAdd = 1;
-    await client_1.default.caveReputation.update({
-        where: { userId },
-        data: {
-            points: { increment: pointsToAdd },
-        },
-    });
-}

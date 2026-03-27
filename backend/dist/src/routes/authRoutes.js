@@ -9,6 +9,7 @@ router.post('/signup', authController_1.signup);
 router.post('/login', authController_1.login);
 router.post('/logout', auth_1.protect, authController_1.logout);
 router.get('/me', auth_1.protect, authController_1.me);
+router.post('/refresh', auth_1.protect, authController_1.refreshToken);
 // Username availability check
 router.get('/check-username', authController_1.checkUsername);
 // GitHub OAuth

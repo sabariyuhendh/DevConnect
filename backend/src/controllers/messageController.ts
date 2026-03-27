@@ -50,14 +50,14 @@ export const getConversations = async (req: Request, res: Response) => {
     });
 
     // Format conversations with last message and other user info
-    const formattedConversations = conversations.map(conv => {
-      const otherMembers = conv.members.filter(m => m.userId !== userId);
+    const formattedConversations = conversations.map((conv: any) => {
+      const otherMembers = conv.members.filter((m: any) => m.userId !== userId);
       const lastMessage = conv.messages[0] || null;
       
       return {
         id: conv.id,
         type: conv.type,
-        members: otherMembers.map(m => m.user),
+        members: otherMembers.map((m: any) => m.user),
         lastMessage,
         updatedAt: conv.updatedAt,
         createdAt: conv.createdAt
@@ -337,7 +337,7 @@ export const markAsRead = async (req: Request, res: Response) => {
     // Create read status for unread messages
     if (unreadMessages.length > 0) {
       await prisma.messageReadStatus.createMany({
-        data: unreadMessages.map(msg => ({
+        data: unreadMessages.map((msg: any) => ({
           id: `${msg.id}_${userId}`,
           messageId: msg.id,
           userId,
@@ -410,9 +410,9 @@ export const getUnreadCount = async (req: Request, res: Response) => {
       }
     });
 
-    const totalUnread = conversations.reduce((sum, conv) => {
-      const unreadInConv = conv.conversation.messages.filter(
-        msg => !conv.lastReadAt || msg.createdAt > conv.lastReadAt
+    const totalUnread = conversations.reduce((sum: any, conv: any) => {
+      const unreadInConv = conv.conversation.messages.filter((msg: any) =>
+        !conv.lastReadAt || msg.createdAt > conv.lastReadAt
       ).length;
       return sum + unreadInConv;
     }, 0);

@@ -134,7 +134,7 @@ const Messages = () => {
     if (typingUsers.size === 0) return null;
     const typingUsersList = Array.from(typingUsers);
     if (typingUsersList.length === 1) return 'typing...';
-    return `${typingUsersList.length} people typing...';
+    return `${typingUsersList.length} people typing...`;
   };
 
   return (

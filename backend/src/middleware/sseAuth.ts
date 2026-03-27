@@ -28,12 +28,16 @@ export const authenticateSSE = (req: Request, res: Response, next: NextFunction)
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     console.log('✅ SSE Auth: Token verified for user', decoded.id);
 
-    // Attach user to request
+    // Attach user to request (partial user object for SSE)
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      username: decoded.username
-    };
+      username: decoded.username,
+      firstName: decoded.firstName || null,
+      lastName: decoded.lastName || null,
+      role: decoded.role || 'USER',
+      isActive: true
+    } as any;
 
     next();
   } catch (error: any) {

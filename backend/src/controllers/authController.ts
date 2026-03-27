@@ -212,7 +212,7 @@ export const checkUsername = async (req: Request, res: Response) => {
       select: { username: true },
       take: 10
     });
-    console.log('[Backend] Sample usernames in DB:', allUsers.map(u => u.username));
+    console.log('[Backend] Sample usernames in DB:', allUsers.map((u: any) => u.username));
     
     // Now check for exact match
     const existing = await prisma.user.findUnique({

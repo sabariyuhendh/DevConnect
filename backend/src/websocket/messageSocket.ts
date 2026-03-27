@@ -128,7 +128,7 @@ export const setupMessageSocket = (io: Server) => {
         });
 
         // Send notification to offline members
-        otherMembers.forEach(member => {
+        otherMembers.forEach((member: any) => {
           messageNamespace.to(`user:${member.userId}`).emit('message:notification', {
             conversationId: data.conversationId,
             message

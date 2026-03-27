@@ -86,13 +86,13 @@ export const getProfile = async (req: Request, res: Response) => {
       prisma.user.update({
         where: { id: user.id },
         data: { profileViews: { increment: 1 } }
-      }).catch(err => console.error('Failed to increment views:', err));
+      }).catch((err: any) => console.error('Failed to increment views:', err));
     }
 
     res.json({
       user: {
         ...user,
-        skills: userSkills.map(s => s.skillName),
+        skills: userSkills.map((s: any) => s.skillName),
         isFollowing,
         followersCount: (user as any)._count.followers,
         followingCount: (user as any)._count.following,
@@ -452,7 +452,7 @@ export const getFollowers = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ followers: followers.map(f => f.follower) });
+    res.json({ followers: followers.map((f: any) => f.follower) });
   } catch (error) {
     res.status(500).json({
       message: 'Error fetching followers',
@@ -497,7 +497,7 @@ export const getFollowing = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ following: following.map(f => f.following) });
+    res.json({ following: following.map((f: any) => f.following) });
   } catch (error) {
     res.status(500).json({
       message: 'Error fetching following',

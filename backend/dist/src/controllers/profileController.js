@@ -85,12 +85,12 @@ const getProfile = async (req, res) => {
             database_1.default.user.update({
                 where: { id: user.id },
                 data: { profileViews: { increment: 1 } }
-            }).catch(err => console.error('Failed to increment views:', err));
+            }).catch((err) => console.error('Failed to increment views:', err));
         }
         res.json({
             user: {
                 ...user,
-                skills: userSkills.map(s => s.skillName),
+                skills: userSkills.map((s) => s.skillName),
                 isFollowing,
                 followersCount: user._count.followers,
                 followingCount: user._count.following,
@@ -431,7 +431,7 @@ const getFollowers = async (req, res) => {
             },
             orderBy: { createdAt: 'desc' }
         });
-        res.json({ followers: followers.map(f => f.follower) });
+        res.json({ followers: followers.map((f) => f.follower) });
     }
     catch (error) {
         res.status(500).json({
@@ -472,7 +472,7 @@ const getFollowing = async (req, res) => {
             },
             orderBy: { createdAt: 'desc' }
         });
-        res.json({ following: following.map(f => f.following) });
+        res.json({ following: following.map((f) => f.following) });
     }
     catch (error) {
         res.status(500).json({

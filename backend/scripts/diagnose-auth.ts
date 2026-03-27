@@ -64,7 +64,7 @@ async function diagnoseAuth() {
     }
 
     console.log(`   ✅ Found ${admins.length} admin user(s):\n`);
-    admins.forEach((admin, index) => {
+    admins.forEach((admin: any, index: any) => {
       console.log(`   ${index + 1}. ${admin.username} (${admin.email})`);
       console.log(`      Role: ${admin.role}`);
       console.log(`      Active: ${admin.isActive}`);
@@ -156,7 +156,7 @@ async function diagnoseAuth() {
     console.log('- Token Generation: ✅ Working');
     console.log('- Token Verification: ✅ Working\n');
 
-    if (admins.some(a => a.role === 'SUPER_ADMIN')) {
+    if (admins.some((a: any) => a.role === 'SUPER_ADMIN')) {
       console.log('✅ Everything looks good!');
       console.log('\nIf you\'re still getting 401 errors:');
       console.log('1. Clear browser localStorage: localStorage.clear()');

@@ -72,7 +72,7 @@ export const setupCaveSocket = (io: Server) => {
           }
         });
 
-        const formattedMessages = messages.map(msg => ({
+        const formattedMessages = messages.map((msg: any) => ({
           id: msg.id,
           content: msg.content,
           userId: msg.userId,

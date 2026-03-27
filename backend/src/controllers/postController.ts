@@ -60,7 +60,7 @@ export const createPost = async (req: Request, res: Response) => {
       where: { followingId: userId },
       select: { followerId: true }
     });
-    const followerIds = followers.map(f => f.followerId);
+    const followerIds = followers.map((f: any) => f.followerId);
     
     // Use SSE broadcast (more efficient than WebSocket for one-way push)
     await broadcastNewPost(post, followerIds);
@@ -171,7 +171,7 @@ export const getFeed = async (req: Request, res: Response) => {
     where: { followerId: userId },
     select: { followingId: true }
   });
-  const followingIds = following.map(f => f.followingId);
+  const followingIds = following.map((f: any) => f.followingId);
 
   // Build query based on filter
   let whereClause: any = {
@@ -217,7 +217,7 @@ export const getFeed = async (req: Request, res: Response) => {
   });
 
   // Calculate scores and sort
-  const scoredPosts = posts.map(post => ({
+  const scoredPosts = posts.map((post: any) => ({
     ...post,
     score: calculateFeedScore(post, userId, followingIds),
     isLiked: post.likes.length > 0,
@@ -226,11 +226,11 @@ export const getFeed = async (req: Request, res: Response) => {
     commentCount: post._count.comments
   }));
 
-  scoredPosts.sort((a, b) => b.score - a.score);
+  scoredPosts.sort((a: any, b: any) => b.score - a.score);
   const finalPosts = scoredPosts.slice(0, Number(limit));
 
   // Remove internal fields
-  const cleanPosts = finalPosts.map(({ likes, bookmarks, _count, score, ...post }) => post);
+  const cleanPosts = finalPosts.map(({ likes, bookmarks, _count, score, ...post }: any) => post);
 
   successResponse(res, cleanPosts, 200, 'Feed fetched');
 };
@@ -272,7 +272,7 @@ export const deletePost = async (req: Request, res: Response) => {
   });
 
   // Broadcast deletion via SSE
-  broadcastPostDelete(id);
+  broadcastPostDelete(Array.isArray(id) ? id[0] : id);
 
   successResponse(res, null, 200, 'Post deleted');
 };
@@ -373,14 +373,14 @@ export const getConnectionRecommendations = async (req: Request, res: Response) 
     where: { followerId: userId },
     select: { followingId: true }
   });
-  const followingIds = userConnections.map(f => f.followingId);
+  const followingIds = userConnections.map((f: any) => f.followingId);
 
   // Get user's skills/interests
   const userSkills = await prisma.userSkill.findMany({
     where: { userId },
     select: { skillName: true }
   });
-  const userSkillNames = userSkills.map(s => s.skillName.toLowerCase());
+  const userSkillNames = userSkills.map((s: any) => s.skillName.toLowerCase());
 
   // Find users with mutual connections
   const mutualConnectionUsers = await prisma.follow.findMany({
@@ -418,7 +418,7 @@ export const getConnectionRecommendations = async (req: Request, res: Response) 
         where: { userId: targetUserId },
         select: { skillName: true }
       });
-      const sharedSkills = targetSkills.filter(s => 
+      const sharedSkills = targetSkills.filter((s: any) => 
         userSkillNames.includes(s.skillName.toLowerCase())
       ).length;
 

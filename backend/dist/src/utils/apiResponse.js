@@ -1,10 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.asyncHandler = exports.serverErrorResponse = exports.validationErrorResponse = exports.forbiddenResponse = exports.unauthorizedResponse = exports.notFoundResponse = exports.errorResponse = exports.successResponse = void 0;
-const successResponse = (res, data, statusCode = 200, message = 'Operation successful', meta) => {
+const successResponse = (res, data, statusCode = 200, message = 'Operation successful', meta, mcpModule) => {
     const response = { status: 'success', data, message };
     if (meta) {
         response.meta = meta;
+    }
+    // Add MCP metadata for microservices compatibility
+    if (mcpModule) {
+        response.mcp = {
+            module: mcpModule,
+            version: '1.0.0'
+        };
     }
     return res.status(statusCode).json(response);
 };

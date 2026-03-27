@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.googleCallback = exports.googleOAuth = exports.githubCallback = exports.githubOAuth = exports.checkUsername = exports.me = exports.login = exports.signup = void 0;
+exports.logout = exports.googleCallback = exports.googleOAuth = exports.githubCallback = exports.githubOAuth = exports.checkUsername = exports.refreshToken = exports.me = exports.login = exports.signup = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const axios_1 = __importDefault(require("axios"));
 const database_1 = __importDefault(require("../config/database"));
@@ -53,6 +53,7 @@ const signup = async (req, res) => {
                 username: user.username,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                role: user.role,
                 profilePicture: user.profilePicture,
                 provider: user.provider
             }
@@ -95,6 +96,7 @@ const login = async (req, res) => {
                 username: user.username,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                role: user.role,
                 profilePicture: user.profilePicture,
                 provider: user.provider
             },
@@ -111,9 +113,62 @@ exports.login = login;
 // Get current user
 const me = async (req, res) => {
     const user = req.user;
+    console.log('[Auth] /me endpoint called for user:', user === null || user === void 0 ? void 0 : user.username, 'Role:', user === null || user === void 0 ? void 0 : user.role);
     return res.json({ user });
 };
 exports.me = me;
+// Refresh token - generates a new token with current user data
+const refreshToken = async (req, res) => {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    try {
+        // Fetch fresh user data from database
+        const user = await database_1.default.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                profilePicture: true,
+                provider: true,
+                isActive: true
+            }
+        });
+        if (!user || !user.isActive) {
+            return res.status(401).json({ message: 'User not found or inactive' });
+        }
+        // Generate new token
+        const token = (0, jwt_1.signToken)({ id: user.id });
+        console.log('[Auth] Token refreshed for user:', user.username, 'Role:', user.role);
+        return res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                profilePicture: user.profilePicture,
+                provider: user.provider
+            }
+        });
+    }
+    catch (error) {
+        console.error('[Auth] Token refresh error:', error);
+        return res.status(500).json({
+            message: 'Failed to refresh token',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+};
+exports.refreshToken = refreshToken;
 // Check username availability
 const checkUsername = async (req, res) => {
     const { username } = req.query;
@@ -136,7 +191,7 @@ const checkUsername = async (req, res) => {
             select: { username: true },
             take: 10
         });
-        console.log('[Backend] Sample usernames in DB:', allUsers.map(u => u.username));
+        console.log('[Backend] Sample usernames in DB:', allUsers.map((u) => u.username));
         // Now check for exact match
         const existing = await database_1.default.user.findUnique({
             where: { username: normalizedUsername },

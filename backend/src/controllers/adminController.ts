@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import prisma from '../config/database';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/errors';
+import { getStringParam } from '../utils/helpers';
 
 // Get dashboard stats
 export const getDashboardStats: RequestHandler = async (req, res, next) => {
@@ -31,7 +32,7 @@ export const getDashboardStats: RequestHandler = async (req, res, next) => {
       activeUsers: activeUsers || 0,
     };
 
-    return successResponse(res, stats, 'Dashboard stats retrieved successfully');
+    return successResponse(res, stats, 200, 'Dashboard stats retrieved successfully');
   } catch (error) {
     return next(error);
   }
@@ -88,7 +89,7 @@ export const getUsers: RequestHandler = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    }, 'Users retrieved successfully');
+    }, 200, 'Users retrieved successfully');
   } catch (error) {
     return next(error);
   }
@@ -97,7 +98,7 @@ export const getUsers: RequestHandler = async (req, res, next) => {
 // Update user role
 export const updateUserRole: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = getStringParam(req.params.userId);
     const { role } = req.body;
 
     const validRoles = ['USER', 'COMPANY_HR', 'EVENT_HOST', 'ADMIN', 'SUPER_ADMIN'];
@@ -121,7 +122,7 @@ export const updateUserRole: RequestHandler = async (req, res, next) => {
       },
     });
 
-    return successResponse(res, user, 'User role updated successfully');
+    return successResponse(res, user, 200, 'User role updated successfully');
   } catch (error) {
     return next(error);
   }
@@ -130,7 +131,7 @@ export const updateUserRole: RequestHandler = async (req, res, next) => {
 // Toggle user active status
 export const toggleUserStatus: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = getStringParam(req.params.userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -152,7 +153,7 @@ export const toggleUserStatus: RequestHandler = async (req, res, next) => {
       },
     });
 
-    return successResponse(res, updatedUser, 'User status updated successfully');
+    return successResponse(res, updatedUser, 200, 'User status updated successfully');
   } catch (error) {
     return next(error);
   }
@@ -176,7 +177,7 @@ export const getPendingJobs: RequestHandler = async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    return successResponse(res, jobs, 'Pending jobs retrieved successfully');
+    return successResponse(res, jobs, 200, 'Pending jobs retrieved successfully');
   } catch (error) {
     return next(error);
   }
@@ -185,7 +186,7 @@ export const getPendingJobs: RequestHandler = async (req, res, next) => {
 // Approve or reject job
 export const updateJobStatus: RequestHandler = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const jobId = getStringParam(req.params.jobId);
     const { status } = req.body;
 
     if (!['APPROVED', 'REJECTED'].includes(status)) {
@@ -211,7 +212,7 @@ export const updateJobStatus: RequestHandler = async (req, res, next) => {
       },
     });
 
-    return successResponse(res, job, `Job ${status.toLowerCase()} successfully`);
+    return successResponse(res, job, 200, `Job ${status.toLowerCase()} successfully`);
   } catch (error) {
     return next(error);
   }
@@ -248,7 +249,7 @@ export const getActivityLogs: RequestHandler = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    }, 'Activity logs retrieved successfully');
+    }, 200, 'Activity logs retrieved successfully');
   } catch (error) {
     return next(error);
   }

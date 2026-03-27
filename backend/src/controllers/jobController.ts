@@ -93,8 +93,7 @@ export const getJobs = async (req: Request, res: Response) => {
       total,
       page: Number(page),
       limit: Number(limit),
-      totalPages,
-      hasMore
+      totalPages
     }
   );
 };
