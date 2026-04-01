@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../../prisma/client';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/errors';
+import { getParamAsString } from '../utils/helpers';
 import { broadcastNewPost, broadcastPostUpdate, broadcastPostDelete } from './feedSSEController';
 
 // Feed Algorithm: Score = (recency * 0.3) + (engagement * 0.5) + (connection * 0.2)
@@ -72,11 +73,11 @@ export const createPost = async (req: Request, res: Response) => {
 // Update post
 export const updatePost = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const postId = getParamAsString(req.params.id);
   const { content, mediaUrls, tags, isDraft } = req.body;
 
   const existingPost = await prisma.post.findUnique({
-    where: { id }
+    where: { id: postId }
   });
 
   if (!existingPost) {
@@ -88,7 +89,7 @@ export const updatePost = async (req: Request, res: Response) => {
   }
 
   const post = await prisma.post.update({
-    where: { id },
+    where: { id: postId },
     data: {
       content: content?.trim(),
       mediaUrls,
@@ -120,10 +121,10 @@ export const updatePost = async (req: Request, res: Response) => {
 // Publish draft
 export const publishDraft = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const postId = getParamAsString(req.params.id);
 
   const existingPost = await prisma.post.findUnique({
-    where: { id }
+    where: { id: postId }
   });
 
   if (!existingPost) {
@@ -139,7 +140,7 @@ export const publishDraft = async (req: Request, res: Response) => {
   }
 
   const post = await prisma.post.update({
-    where: { id },
+    where: { id: postId },
     data: {
       isDraft: false,
       publishedAt: new Date()
@@ -253,10 +254,10 @@ export const getDrafts = async (req: Request, res: Response) => {
 // Delete post
 export const deletePost = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const postId = getParamAsString(req.params.id);
 
   const post = await prisma.post.findUnique({
-    where: { id }
+    where: { id: postId }
   });
 
   if (!post) {
@@ -268,11 +269,11 @@ export const deletePost = async (req: Request, res: Response) => {
   }
 
   await prisma.post.delete({
-    where: { id }
+    where: { id: postId }
   });
 
   // Broadcast deletion via SSE
-  broadcastPostDelete(Array.isArray(id) ? id[0] : id);
+  broadcastPostDelete(postId);
 
   successResponse(res, null, 200, 'Post deleted');
 };
@@ -280,10 +281,10 @@ export const deletePost = async (req: Request, res: Response) => {
 // Like post
 export const likePost = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const postId = getParamAsString(req.params.id);
 
   const post = await prisma.post.findUnique({
-    where: { id }
+    where: { id: postId }
   });
 
   if (!post) {
@@ -293,7 +294,7 @@ export const likePost = async (req: Request, res: Response) => {
   const existingLike = await prisma.postLike.findUnique({
     where: {
       postId_userId: {
-        postId: id,
+        postId: postId,
         userId
       }
     }
@@ -305,7 +306,7 @@ export const likePost = async (req: Request, res: Response) => {
       where: { id: existingLike.id }
     });
     await prisma.post.update({
-      where: { id },
+      where: { id: postId },
       data: { likeCount: { decrement: 1 } }
     });
     successResponse(res, { liked: false }, 200, 'Post unliked');
@@ -313,12 +314,12 @@ export const likePost = async (req: Request, res: Response) => {
     // Like
     await prisma.postLike.create({
       data: {
-        postId: id,
+        postId: postId,
         userId
       }
     });
     await prisma.post.update({
-      where: { id },
+      where: { id: postId },
       data: { likeCount: { increment: 1 } }
     });
     successResponse(res, { liked: true }, 200, 'Post liked');
@@ -328,10 +329,10 @@ export const likePost = async (req: Request, res: Response) => {
 // Bookmark post
 export const bookmarkPost = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const postId = getParamAsString(req.params.id);
 
   const post = await prisma.post.findUnique({
-    where: { id }
+    where: { id: postId }
   });
 
   if (!post) {
@@ -341,7 +342,7 @@ export const bookmarkPost = async (req: Request, res: Response) => {
   const existingBookmark = await prisma.postBookmark.findUnique({
     where: {
       postId_userId: {
-        postId: id,
+        postId: postId,
         userId
       }
     }
@@ -355,7 +356,7 @@ export const bookmarkPost = async (req: Request, res: Response) => {
   } else {
     await prisma.postBookmark.create({
       data: {
-        postId: id,
+        postId: postId,
         userId
       }
     });

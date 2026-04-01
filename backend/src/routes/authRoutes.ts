@@ -12,12 +12,14 @@ import {
   refreshToken
 } from '../controllers/authController';
 import { protect } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { signupSchema, loginSchema } from '../validations/authValidation';
 
 const router = Router();
 
-// Local authentication
-router.post('/signup', signup);
-router.post('/login', login);
+// Local authentication with validation
+router.post('/signup', validate(signupSchema), signup);
+router.post('/login', validate(loginSchema), login);
 router.post('/logout', protect, logout);
 router.get('/me', protect, me);
 router.post('/refresh', protect, refreshToken);

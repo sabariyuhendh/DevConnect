@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { successResponse } from '../utils/apiResponse';
+import { getParamAsString } from '../utils/helpers';
 
 // Get all conversations for current user
 export const getConversations = async (req: Request, res: Response) => {
@@ -178,7 +179,7 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
 // Get messages for a conversation
 export const getMessages = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
-  const { conversationId } = req.params;
+  const conversationId = getParamAsString(req.params.conversationId);
   const { limit = 50, before } = req.query;
 
   try {
@@ -233,7 +234,7 @@ export const getMessages = async (req: Request, res: Response) => {
 // Send a message
 export const sendMessage = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
-  const { conversationId } = req.params;
+  const conversationId = getParamAsString(req.params.conversationId);
   const { content } = req.body;
 
   if (!content || !content.trim()) {
@@ -294,7 +295,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 // Mark messages as read
 export const markAsRead = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
-  const { conversationId } = req.params;
+  const conversationId = getParamAsString(req.params.conversationId);
 
   try {
     // Verify user is member
@@ -360,7 +361,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 // Delete a message
 export const deleteMessage = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
-  const { messageId } = req.params;
+  const messageId = getParamAsString(req.params.messageId);
 
   try {
     const message = await prisma.message.findUnique({
@@ -401,8 +402,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
           include: {
             messages: {
               where: {
-                senderId: { not: userId },
-                createdAt: { gt: prisma.conversationMember.fields.lastReadAt }
+                senderId: { not: userId }
               }
             }
           }

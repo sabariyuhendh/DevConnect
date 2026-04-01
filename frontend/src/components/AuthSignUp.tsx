@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiBase } from '../utils/api';
+import { validateUsernameFormat, validateEmail, validatePassword, getPasswordStrength } from '../utils/validation';
 
 export default function AuthSignUp() {
   const { setUser } = useAuth();
@@ -10,11 +11,14 @@ export default function AuthSignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [confirm, setConfirm] = useState('');
   const [agree, setAgree] = useState(false);
 
   const [checking, setChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameFormatError, setUsernameFormatError] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,21 +32,36 @@ export default function AuthSignUp() {
     console.log('========================');
   }, []);
 
-  // Debounced username availability check
+  // Validate username format first, then check availability
   useEffect(() => {
     if (!username || username.length < 2) {
+      setUsernameAvailable(null);
+      setUsernameFormatError(null);
+      setChecking(false);
+      return;
+    }
+
+    // First validate format
+    const formatValidation = validateUsernameFormat(username);
+    if (!formatValidation.valid) {
+      setUsernameFormatError(formatValidation.message || 'Invalid username format');
       setUsernameAvailable(null);
       setChecking(false);
       return;
     }
+
+    // Format is valid, clear error
+    setUsernameFormatError(null);
+
+    // Now check availability with debounce
     let mounted = true;
     setChecking(true);
     const id = setTimeout(async () => {
       try {
-        const url = `${apiBase}/api/auth/check-username?username=${encodeURIComponent(username)}`;
-        console.log('[Username Check] Checking username:', username);
+        const normalizedUsername = username.toLowerCase().trim();
+        const url = `${apiBase}/api/auth/check-username?username=${encodeURIComponent(normalizedUsername)}`;
+        console.log('[Username Check] Checking username:', normalizedUsername);
         console.log('[Username Check] API URL:', url);
-        console.log('[Username Check] API Base:', apiBase);
         
         const res = await fetch(url);
         console.log('[Username Check] Response status:', res.status);
@@ -56,8 +75,6 @@ export default function AuthSignUp() {
           const data = await res.json();
           console.log('[Username Check] Response data:', data);
           console.log('[Username Check] Available:', data.available);
-          console.log('[Username Check] Available === true:', data.available === true);
-          // Explicitly check if available is true
           if (mounted) setUsernameAvailable(data.available === true);
         }
       } catch (err) {
@@ -66,7 +83,8 @@ export default function AuthSignUp() {
       } finally {
         if (mounted) setChecking(false);
       }
-    }, 400);
+    }, 500); // Increased debounce to 500ms for better UX
+    
     return () => {
       mounted = false;
       clearTimeout(id);
@@ -78,25 +96,40 @@ export default function AuthSignUp() {
     setError(null);
 
     console.log('[Signup] Starting signup process...');
-    console.log('[Signup] Username:', username);
-    console.log('[Signup] Email:', email);
-    console.log('[Signup] Username available:', usernameAvailable);
 
-    if (!username) return setError('Username is required');
+    // Validate all fields
+    if (!firstName.trim()) return setError('First name is required');
+    if (!lastName.trim()) return setError('Last name is required');
+    if (!username.trim()) return setError('Username is required');
+    
+    const usernameValidation = validateUsernameFormat(username);
+    if (!usernameValidation.valid) return setError(usernameValidation.message || 'Invalid username');
+    
     if (usernameAvailable === false) return setError('Username is taken');
-    if (!email) return setError('Email is required');
-    if (!password) return setError('Password is required');
+    
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) return setError(emailValidation.message || 'Invalid email');
+    
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) return setError(passwordValidation.message || 'Invalid password');
+    
     if (password !== confirm) return setError('Passwords do not match');
     if (!agree) return setError('You must agree to the Terms of Service');
 
     setLoading(true);
     try {
-      const body = { username, email, password };
+      const normalizedUsername = username.toLowerCase().trim();
+      const body = { 
+        username: normalizedUsername, 
+        email: email.trim(), 
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim()
+      };
       const url = `${apiBase}/api/auth/signup`;
       
       console.log('[Signup] API URL:', url);
-      console.log('[Signup] API Base:', apiBase);
-      console.log('[Signup] Request body:', { username, email, password: '***' });
+      console.log('[Signup] Request body:', { ...body, password: '***' });
       
       const res = await fetch(url, {
         method: 'POST',
@@ -121,8 +154,13 @@ export default function AuthSignUp() {
       const data = await res.json();
       console.log('[Signup] Success! Response:', { ...data, token: '***' });
       
-      // Persist token and username in auth context
-      setUser({ id: data.user?.id, email: data.user?.email, username: data.user?.username || username, token: data.token });
+      // Persist token and user data in auth context
+      setUser({ 
+        id: data.user?.id, 
+        email: data.user?.email, 
+        username: data.user?.username || normalizedUsername, 
+        token: data.token 
+      });
       console.log('[Signup] User set in context');
       
       // Redirect to feed page
@@ -135,24 +173,31 @@ export default function AuthSignUp() {
     }
   }
 
+  const passwordStrength = password ? getPasswordStrength(password) : null;
+
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 420, padding: 12 }}>
       <h3>Create your account</h3>
 
-      {/* Debug Info */}
-      <div style={{ 
-        fontSize: 11, 
-        padding: 8, 
-        background: '#f0f0f0', 
-        border: '1px solid #ccc', 
-        borderRadius: 4, 
-        marginBottom: 12,
-        fontFamily: 'monospace'
-      }}>
-        <div><strong>Debug Info:</strong></div>
-        <div>API Base: {apiBase}</div>
-        <div>Env: {import.meta.env.MODE}</div>
-      </div>
+      <label>
+        First Name
+        <input
+          value={firstName}
+          onChange={e => setFirstName(e.target.value)}
+          placeholder="John"
+          required
+        />
+      </label>
+
+      <label>
+        Last Name
+        <input
+          value={lastName}
+          onChange={e => setLastName(e.target.value)}
+          placeholder="Doe"
+          required
+        />
+      </label>
 
       <label>
         Username
@@ -163,8 +208,20 @@ export default function AuthSignUp() {
           required
         />
       </label>
-      <div style={{ fontSize: 12, color: usernameAvailable === false ? 'crimson' : 'green', minHeight: 18 }}>
-        {checking ? 'Checking username...' : username ? (usernameAvailable ? 'Username available' : usernameAvailable === false ? 'Taken' : '') : 'Pick a unique username'}
+      <div style={{ fontSize: 12, minHeight: 18, marginBottom: 8 }}>
+        {checking ? (
+          <span style={{ color: '#666' }}>Checking username...</span>
+        ) : usernameFormatError ? (
+          <span style={{ color: 'crimson' }}>{usernameFormatError}</span>
+        ) : username ? (
+          usernameAvailable ? (
+            <span style={{ color: 'green' }}>✓ Username available</span>
+          ) : usernameAvailable === false ? (
+            <span style={{ color: 'crimson' }}>✗ Username taken</span>
+          ) : null
+        ) : (
+          <span style={{ color: '#666' }}>Pick a unique username (3-30 characters, start with letter)</span>
+        )}
       </div>
 
       <label>
@@ -176,6 +233,16 @@ export default function AuthSignUp() {
         Password
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
       </label>
+      {password && passwordStrength && (
+        <div style={{ fontSize: 12, marginBottom: 8 }}>
+          Password strength: <span style={{ 
+            color: passwordStrength.strength === 'weak' ? 'crimson' : passwordStrength.strength === 'medium' ? 'orange' : 'green',
+            fontWeight: 'bold'
+          }}>
+            {passwordStrength.strength.toUpperCase()}
+          </span>
+        </div>
+      )}
 
       <label>
         Confirm password
@@ -187,7 +254,7 @@ export default function AuthSignUp() {
         <span>I agree to the Terms of Service</span>
       </label>
 
-      <button type="submit" disabled={loading || checking || usernameAvailable === false}>
+      <button type="submit" disabled={loading || checking || usernameAvailable === false || !!usernameFormatError}>
         {loading ? 'Creating account...' : 'Create account'}
       </button>
 

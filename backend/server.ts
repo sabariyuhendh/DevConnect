@@ -9,6 +9,7 @@ import { AppError, globalErrorHandler } from './src/utils/errors';
 import { setupCaveSocket } from './src/websocket/caveSocket';
 import { setupFeedSocket } from './src/websocket/feedSocket';
 import { setupMessageSocket } from './src/websocket/messageSocket';
+import { security, authRateLimiter } from './src/middleware/security';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes';
@@ -20,6 +21,8 @@ import caveRoutes from './src/routes/caveRoutes';
 import adminRoutes from './src/routes/adminRoutes';
 import superAdminRoutes from './src/routes/superAdminRoutes';
 import messageRoutes from './src/routes/messageRoutes';
+import uploadRoutes from './src/routes/uploadRoutes';
+import connectionRoutes from './src/routes/connectionRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -98,6 +101,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(helmet());
 
+// Apply enhanced security middleware
+app.use(security);
+
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (NODE_ENV === 'development') {
@@ -106,8 +112,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
+// Routes with specific rate limiting for auth
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -116,6 +122,8 @@ app.use('/api/cave', caveRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/connections', connectionRoutes);
 
 // Health check endpoint with MCP module info
 app.get('/health', (req, res) => {

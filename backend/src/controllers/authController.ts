@@ -13,14 +13,21 @@ export const signup = async (req: Request, res: Response) => {
   console.log('[Backend] Request body:', { email, username, firstName, lastName, password: '***' });
 
   try {
-    // Normalize username
-    const normalizedUsername = username?.trim().toLowerCase();
+    // Username is already normalized by Zod validation (lowercase, trimmed)
+    const normalizedUsername = username.toLowerCase().trim();
     
     console.log('[Backend] Normalized username:', normalizedUsername);
     
     if (!normalizedUsername) {
       console.log('[Backend] Username is missing');
       return res.status(400).json({ message: 'Username is required' });
+    }
+
+    // Check for reserved usernames
+    const reservedUsernames = ['admin', 'root', 'support', 'system', 'moderator', 'mod', 'administrator', 'devconnect', 'api', 'www'];
+    if (reservedUsernames.includes(normalizedUsername)) {
+      console.log('[Backend] Reserved username attempted:', normalizedUsername);
+      return res.status(400).json({ message: 'This username is reserved' });
     }
 
     console.log('[Backend] Checking for existing user...');
@@ -31,6 +38,12 @@ export const signup = async (req: Request, res: Response) => {
     
     if (existing) {
       console.log('[Backend] User already exists:', { email: existing.email, username: existing.username });
+      if (existing.email === email) {
+        return res.status(409).json({ message: 'Email already in use' });
+      }
+      if (existing.username === normalizedUsername) {
+        return res.status(409).json({ message: 'Username already taken' });
+      }
       return res.status(409).json({ message: 'Email or username already in use' });
     }
 
@@ -44,7 +57,9 @@ export const signup = async (req: Request, res: Response) => {
         firstName,
         lastName,
         password: hashedPassword,
-        provider: 'local'
+        provider: 'local',
+        emailVerified: false,
+        isVerified: false
       }
     });
 
@@ -186,52 +201,88 @@ export const refreshToken = async (req: Request, res: Response) => {
   }
 };
 
-// Check username availability
+// Check username availability - Optimized for performance and reliability
 export const checkUsername = async (req: Request, res: Response) => {
-  const { username } = req.query;
-  
-  console.log('=== USERNAME CHECK START ===');
-  console.log('[Backend] Raw query params:', JSON.stringify(req.query));
-  console.log('[Backend] Username from query:', username);
-  console.log('[Backend] Username type:', typeof username);
-  
-  if (!username || typeof username !== 'string') {
-    console.log('[Backend] Invalid username parameter');
-    console.log('=== USERNAME CHECK END (INVALID) ===');
-    return res.status(400).json({ message: 'Username is required', available: false });
-  }
-
   try {
+    const { username } = req.query;
+    
+    // Validate input
+    if (!username || typeof username !== 'string' || username.trim().length === 0) {
+      return res.json({ 
+        available: false, 
+        message: 'Username is required' 
+      });
+    }
+
+    // Normalize username (lowercase, trim)
     const normalizedUsername = username.toLowerCase().trim();
-    console.log('[Backend] Original username:', `"${username}"`);
-    console.log('[Backend] Normalized username:', `"${normalizedUsername}"`);
-    console.log('[Backend] Username length:', normalizedUsername.length);
     
-    // First, let's check all usernames in the database for debugging
-    const allUsers = await prisma.user.findMany({
-      select: { username: true },
-      take: 10
-    });
-    console.log('[Backend] Sample usernames in DB:', allUsers.map((u: any) => u.username));
+    // Basic validation checks
+    if (normalizedUsername.length < 3) {
+      return res.json({ 
+        available: false, 
+        message: 'Username must be at least 3 characters' 
+      });
+    }
     
-    // Now check for exact match
-    const existing = await prisma.user.findUnique({
+    if (normalizedUsername.length > 30) {
+      return res.json({ 
+        available: false, 
+        message: 'Username must be at most 30 characters' 
+      });
+    }
+    
+    // Check format - must start with letter
+    const usernameRegex = /^[a-z][a-z0-9._-]*$/;
+    if (!usernameRegex.test(normalizedUsername)) {
+      return res.json({ 
+        available: false, 
+        message: 'Username must start with a letter and contain only lowercase letters, numbers, dots, underscores, and hyphens' 
+      });
+    }
+    
+    // Check for consecutive special characters
+    if (/[._-]{2,}/.test(normalizedUsername)) {
+      return res.json({ 
+        available: false, 
+        message: 'Username cannot have consecutive special characters' 
+      });
+    }
+    
+    // Check for reserved usernames
+    const reservedUsernames = [
+      'admin', 'root', 'support', 'system', 'moderator', 'mod', 
+      'administrator', 'devconnect', 'api', 'www', 'help', 'info',
+      'contact', 'about', 'terms', 'privacy', 'settings', 'profile'
+    ];
+    
+    if (reservedUsernames.includes(normalizedUsername)) {
+      return res.json({ 
+        available: false, 
+        message: 'This username is reserved' 
+      });
+    }
+    
+    // Check database for existing username
+    // Using findUnique for optimal performance with indexed field
+    const existingUser = await prisma.user.findUnique({
       where: { username: normalizedUsername },
-      select: { id: true, username: true }
+      select: { id: true }
     });
     
-    const isAvailable = !existing;
-    console.log('[Backend] Query result:', existing ? `Found user: ${existing.username}` : 'No user found');
-    console.log('[Backend] User exists in DB:', !!existing);
-    console.log('[Backend] Username available:', isAvailable);
-    console.log('[Backend] Sending response:', JSON.stringify({ available: isAvailable }));
-    console.log('=== USERNAME CHECK END ===');
+    const isAvailable = !existingUser;
     
-    return res.json({ available: isAvailable });
+    return res.json({ 
+      available: isAvailable,
+      ...(isAvailable ? {} : { message: 'Username is already taken' })
+    });
+    
   } catch (error) {
-    console.error('[Backend] Username check error:', error);
-    console.log('=== USERNAME CHECK END (ERROR) ===');
-    return res.status(500).json({ message: 'Error checking username', available: false });
+    console.error('[Username Check Error]', error);
+    return res.status(500).json({ 
+      available: false, 
+      message: 'Error checking username availability' 
+    });
   }
 };
 
@@ -309,7 +360,7 @@ export const githubCallback = async (req: Request, res: Response) => {
       where: {
         OR: [
           { email: primaryEmail },
-          { provider: 'github', providerId: String(githubUser.id) }
+          { provider: 'github', email: primaryEmail }
         ]
       }
     });
@@ -333,7 +384,6 @@ export const githubCallback = async (req: Request, res: Response) => {
           firstName: githubUser.name?.split(' ')[0] || githubUser.login,
           lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
           provider: 'github',
-          providerId: String(githubUser.id),
           profilePicture: githubUser.avatar_url,
           bio: githubUser.bio,
           location: githubUser.location,
@@ -349,7 +399,6 @@ export const githubCallback = async (req: Request, res: Response) => {
         where: { id: user.id },
         data: {
           provider: 'github',
-          providerId: String(githubUser.id),
           github: githubUser.login,
           profilePicture: user.profilePicture || githubUser.avatar_url
         }
@@ -430,7 +479,7 @@ export const googleCallback = async (req: Request, res: Response) => {
       where: {
         OR: [
           { email: googleUser.email },
-          { provider: 'google', providerId: googleUser.id }
+          { provider: 'google', email: googleUser.email }
         ]
       }
     });
@@ -452,7 +501,6 @@ export const googleCallback = async (req: Request, res: Response) => {
           firstName: googleUser.given_name,
           lastName: googleUser.family_name,
           provider: 'google',
-          providerId: googleUser.id,
           profilePicture: googleUser.picture,
           emailVerified: googleUser.verified_email,
           isVerified: googleUser.verified_email
@@ -463,7 +511,6 @@ export const googleCallback = async (req: Request, res: Response) => {
         where: { id: user.id },
         data: {
           provider: 'google',
-          providerId: googleUser.id,
           profilePicture: user.profilePicture || googleUser.picture
         }
       });

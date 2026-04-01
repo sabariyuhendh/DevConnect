@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import prisma from '../config/database';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/errors';
+import { getParamAsString } from '../utils/helpers';
 
 // Get all admins
 export const getAllAdmins: RequestHandler = async (req, res, next) => {
@@ -67,7 +68,7 @@ export const bulkUpdateRoles: RequestHandler = async (req, res, next) => {
 // Delete user permanently
 export const deleteUser: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = getParamAsString(req.params.userId);
 
     // Prevent deleting super admins
     const user = await prisma.user.findUnique({
@@ -259,7 +260,7 @@ export const getAllJobs: RequestHandler = async (req, res, next) => {
 // Delete job
 export const deleteJob: RequestHandler = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const jobId = getParamAsString(req.params.jobId);
 
     await prisma.job.delete({
       where: { id: jobId },
@@ -394,7 +395,7 @@ export const clearActivityLogs: RequestHandler = async (req, res, next) => {
 // Get user details with full information
 export const getUserDetails: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = getParamAsString(req.params.userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -461,7 +462,7 @@ export const getUserDetails: RequestHandler = async (req, res, next) => {
 // Verify or unverify user
 export const toggleUserVerification: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = getParamAsString(req.params.userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

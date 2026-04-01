@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import prisma from '../config/database';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/errors';
-import { getStringParam } from '../utils/helpers';
+import { getParamAsString } from '../utils/helpers';
 
 // Get dashboard stats
 export const getDashboardStats: RequestHandler = async (req, res, next) => {
@@ -98,7 +98,7 @@ export const getUsers: RequestHandler = async (req, res, next) => {
 // Update user role
 export const updateUserRole: RequestHandler = async (req, res, next) => {
   try {
-    const userId = getStringParam(req.params.userId);
+    const userId = getParamAsString(req.params.userId);
     const { role } = req.body;
 
     const validRoles = ['USER', 'COMPANY_HR', 'EVENT_HOST', 'ADMIN', 'SUPER_ADMIN'];
@@ -131,7 +131,7 @@ export const updateUserRole: RequestHandler = async (req, res, next) => {
 // Toggle user active status
 export const toggleUserStatus: RequestHandler = async (req, res, next) => {
   try {
-    const userId = getStringParam(req.params.userId);
+    const userId = getParamAsString(req.params.userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -186,7 +186,7 @@ export const getPendingJobs: RequestHandler = async (req, res, next) => {
 // Approve or reject job
 export const updateJobStatus: RequestHandler = async (req, res, next) => {
   try {
-    const jobId = getStringParam(req.params.jobId);
+    const jobId = getParamAsString(req.params.jobId);
     const { status } = req.body;
 
     if (!['APPROVED', 'REJECTED'].includes(status)) {

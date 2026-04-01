@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../../prisma/client';
 import { successResponse } from '../utils/apiResponse';
 import { AppError } from '../utils/errors';
+import { getParamAsString } from '../utils/helpers';
 
 // Get jobs with lazy loading (infinite scroll)
 export const getJobs = async (req: Request, res: Response) => {
@@ -100,10 +101,10 @@ export const getJobs = async (req: Request, res: Response) => {
 
 // Get single job
 export const getJob = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
 
   const job = await prisma.job.findUnique({
-    where: { id },
+    where: { id: jobId },
     include: {
       postedBy: {
         select: {
@@ -130,7 +131,7 @@ export const getJob = async (req: Request, res: Response) => {
 
   // Increment view count
   await prisma.job.update({
-    where: { id },
+    where: { id: jobId },
     data: { viewCount: { increment: 1 } }
   });
 
@@ -210,10 +211,10 @@ export const createJob = async (req: Request, res: Response) => {
 // Update job
 export const updateJob = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
 
   const existingJob = await prisma.job.findUnique({
-    where: { id }
+    where: { id: jobId }
   });
 
   if (!existingJob) {
@@ -225,7 +226,7 @@ export const updateJob = async (req: Request, res: Response) => {
   }
 
   const job = await prisma.job.update({
-    where: { id },
+    where: { id: jobId },
     data: {
       ...req.body,
       status: 'PENDING', // Reset to pending after edit
@@ -239,10 +240,10 @@ export const updateJob = async (req: Request, res: Response) => {
 // Delete job
 export const deleteJob = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
 
   const job = await prisma.job.findUnique({
-    where: { id }
+    where: { id: jobId }
   });
 
   if (!job) {
@@ -254,7 +255,7 @@ export const deleteJob = async (req: Request, res: Response) => {
   }
 
   await prisma.job.delete({
-    where: { id }
+    where: { id: jobId }
   });
 
   successResponse(res, null, 200, 'Job deleted');
@@ -263,11 +264,11 @@ export const deleteJob = async (req: Request, res: Response) => {
 // Apply to job
 export const applyToJob = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
   const { coverLetter, resumeUrl, portfolioUrl, linkedinUrl, githubUrl } = req.body;
 
   const job = await prisma.job.findUnique({
-    where: { id }
+    where: { id: jobId }
   });
 
   if (!job) {
@@ -282,7 +283,7 @@ export const applyToJob = async (req: Request, res: Response) => {
   const existingApplication = await prisma.jobApplication.findUnique({
     where: {
       jobId_userId: {
-        jobId: id,
+        jobId: jobId,
         userId
       }
     }
@@ -294,7 +295,7 @@ export const applyToJob = async (req: Request, res: Response) => {
 
   const application = await prisma.jobApplication.create({
     data: {
-      jobId: id,
+      jobId: jobId,
       userId,
       coverLetter,
       resumeUrl,
@@ -306,7 +307,7 @@ export const applyToJob = async (req: Request, res: Response) => {
 
   // Increment application count
   await prisma.job.update({
-    where: { id },
+    where: { id: jobId },
     data: { applicationCount: { increment: 1 } }
   });
 
@@ -316,12 +317,12 @@ export const applyToJob = async (req: Request, res: Response) => {
 // Save/unsave job
 export const toggleSaveJob = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
 
   const existingSave = await prisma.savedJob.findUnique({
     where: {
       jobId_userId: {
-        jobId: id,
+        jobId: jobId,
         userId
       }
     }
@@ -335,7 +336,7 @@ export const toggleSaveJob = async (req: Request, res: Response) => {
   } else {
     await prisma.savedJob.create({
       data: {
-        jobId: id,
+        jobId: jobId,
         userId
       }
     });
@@ -423,10 +424,10 @@ export const getPendingJobs = async (req: Request, res: Response) => {
 // Approve job (admin only)
 export const approveJob = async (req: Request, res: Response) => {
   const adminId = req.user!.id;
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
 
   const job = await prisma.job.update({
-    where: { id },
+    where: { id: jobId },
     data: {
       status: 'APPROVED',
       isVerified: true,
@@ -440,11 +441,11 @@ export const approveJob = async (req: Request, res: Response) => {
 
 // Reject job (admin only)
 export const rejectJob = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const jobId = getParamAsString(req.params.id);
   const { reason } = req.body;
 
   const job = await prisma.job.update({
-    where: { id },
+    where: { id: jobId },
     data: {
       status: 'REJECTED'
     }

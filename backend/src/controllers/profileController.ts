@@ -94,9 +94,9 @@ export const getProfile = async (req: Request, res: Response) => {
         ...user,
         skills: userSkills.map((s: any) => s.skillName),
         isFollowing,
-        followersCount: (user as any)._count.followers,
-        followingCount: (user as any)._count.following,
-        postsCount: (user as any)._count.posts
+        followersCount: user._count?.followers || 0,
+        followingCount: user._count?.following || 0,
+        postsCount: user._count?.posts || 0
       }
     });
   } catch (error) {
@@ -115,36 +115,7 @@ export const getMyProfile = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        bio: true,
-        title: true,
-        company: true,
-        location: true,
-        website: true,
-        github: true,
-        linkedin: true,
-        twitter: true,
-        phone: true,
-        profilePicture: true,
-        coverPicture: true,
-        skills: true,
-        yearsOfExp: true,
-        availability: true,
-        timezone: true,
-        locale: true,
-        isOnline: true,
-        lastSeen: true,
-        profileViews: true,
-        preferences: true,
-        emailVerified: true,
-        isVerified: true,
-        createdAt: true,
-        provider: true,
+      include: {
         _count: {
           select: {
             followers: true,
@@ -162,9 +133,9 @@ export const getMyProfile = async (req: Request, res: Response) => {
     res.json({
       user: {
         ...user,
-        followersCount: user._count.followers,
-        followingCount: user._count.following,
-        postsCount: user._count.posts
+        followersCount: user._count?.followers || 0,
+        followingCount: user._count?.following || 0,
+        postsCount: user._count?.posts || 0
       }
     });
   } catch (error) {
@@ -188,7 +159,6 @@ export const updateProfile = async (req: Request, res: Response) => {
     website,
     github,
     linkedin,
-    twitter,
     phone,
     skills,
     yearsOfExp,
@@ -209,7 +179,6 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (website !== undefined) updateData.website = website;
     if (github !== undefined) updateData.github = github;
     if (linkedin !== undefined) updateData.linkedin = linkedin;
-    if (twitter !== undefined) updateData.twitter = twitter;
     if (phone !== undefined) updateData.phone = phone;
     if (skills !== undefined) updateData.skills = skills;
     if (yearsOfExp !== undefined) updateData.yearsOfExp = yearsOfExp;
@@ -233,13 +202,9 @@ export const updateProfile = async (req: Request, res: Response) => {
         website: true,
         github: true,
         linkedin: true,
-        twitter: true,
         phone: true,
         profilePicture: true,
         coverPicture: true,
-        skills: true,
-        yearsOfExp: true,
-        availability: true,
         timezone: true,
         locale: true,
         createdAt: true

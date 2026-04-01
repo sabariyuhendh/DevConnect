@@ -1,7 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '../../prisma/client';
 import { successResponse, errorResponse } from '../utils/apiResponse';
-import { getStringParam, requireUserId } from '../utils/helpers';
+import { getParamAsString } from '../utils/helpers';
+
+// Helper function to require user ID
+const requireUserId = (userId: string | undefined): string => {
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  return userId;
+};
 
 // Focus Sessions
 const startFocusSession = async (req: Request, res: Response) => {
@@ -27,7 +35,7 @@ const startFocusSession = async (req: Request, res: Response) => {
 const completeFocusSession = async (req: Request, res: Response) => {
   try {
     const userId = requireUserId(req.user?.id);
-    const sessionId = getStringParam(req.params.sessionId);
+    const sessionId = getParamAsString(req.params.sessionId);
 
     const session = await prisma.caveFocusSession.update({
       where: { id: sessionId },
@@ -112,7 +120,7 @@ const getTasks = async (req: Request, res: Response) => {
 
 const updateTask = async (req: Request, res: Response) => {
   try {
-    const taskId = getStringParam(req.params.taskId);
+    const taskId = getParamAsString(req.params.taskId);
     const { title, description, priority, status, dueDate } = req.body;
 
     const data: any = {};
@@ -144,7 +152,7 @@ const updateTask = async (req: Request, res: Response) => {
 
 const deleteTask = async (req: Request, res: Response) => {
   try {
-    const taskId = getStringParam(req.params.taskId);
+    const taskId = getParamAsString(req.params.taskId);
 
     await prisma.caveTask.delete({
       where: { id: taskId },
@@ -193,7 +201,7 @@ const getNotes = async (req: Request, res: Response) => {
 
 const updateNote = async (req: Request, res: Response) => {
   try {
-    const noteId = getStringParam(req.params.noteId);
+    const noteId = getParamAsString(req.params.noteId);
     const { title, content } = req.body;
 
     const data: any = {};
@@ -213,7 +221,7 @@ const updateNote = async (req: Request, res: Response) => {
 
 const deleteNote = async (req: Request, res: Response) => {
   try {
-    const noteId = getStringParam(req.params.noteId);
+    const noteId = getParamAsString(req.params.noteId);
 
     await prisma.caveNote.delete({
       where: { id: noteId },
@@ -279,7 +287,7 @@ const createChatRoom = async (req: Request, res: Response) => {
 const joinChatRoom = async (req: Request, res: Response) => {
   try {
     const userId = requireUserId(req.user?.id);
-    const roomId = getStringParam(req.params.roomId);
+    const roomId = getParamAsString(req.params.roomId);
 
     const member = await prisma.caveRoomMember.create({
       data: {
@@ -299,7 +307,7 @@ const joinChatRoom = async (req: Request, res: Response) => {
 
 const getChatMessages = async (req: Request, res: Response) => {
   try {
-    const roomId = getStringParam(req.params.roomId);
+    const roomId = getParamAsString(req.params.roomId);
     const { limit = 50, before } = req.query;
 
     const where: any = { roomId };
@@ -375,7 +383,7 @@ const getTrendArticles = async (req: Request, res: Response) => {
 const toggleBookmark = async (req: Request, res: Response) => {
   try {
     const userId = requireUserId(req.user?.id);
-    const articleId = getStringParam(req.params.articleId);
+    const articleId = getParamAsString(req.params.articleId);
 
     const existing = await prisma.caveArticleBookmark.findUnique({
       where: {
@@ -409,7 +417,7 @@ const toggleBookmark = async (req: Request, res: Response) => {
 
 const incrementReadCount = async (req: Request, res: Response) => {
   try {
-    const articleId = getStringParam(req.params.articleId);
+    const articleId = getParamAsString(req.params.articleId);
 
     await prisma.caveTrendArticle.update({
       where: { id: articleId },

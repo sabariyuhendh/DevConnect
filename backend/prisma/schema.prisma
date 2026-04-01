@@ -73,6 +73,11 @@ model User {
   caveChatMessages                                CaveChatMessage[]
   caveArticleBookmarks                            CaveArticleBookmark[]
   caveReputation                                  CaveReputation?
+  
+  // Event Relations
+  eventsOrganized                                 Event[]
+  eventAttendances                                EventAttendee[]
+  eventWaitlists                                  EventWaitlist[]
 
   @@index([email])
   @@index([username])
@@ -699,6 +704,151 @@ enum ApplicationStatus {
   ACCEPTED      // Offer accepted
   REJECTED      // Application rejected
   WITHDRAWN     // Applicant withdrew
+}
+
+// ============================================
+// EVENTS SYSTEM MODELS
+// ============================================
+
+model Event {
+  id              String        @id @default(cuid())
+  title           String
+  description     String        @db.Text
+  organizerId     String
+  
+  // Date and Time
+  startDate       DateTime
+  endDate         DateTime
+  timezone        String        @default("UTC")
+  
+  // Location
+  location        String?
+  venue           String?
+  address         String?
+  
+  // Event Details
+  type            EventType     @default(MEETUP)
+  format          EventFormat   @default(IN_PERSON)
+  category        String?
+  tags            String[]
+  
+  // Capacity and Pricing
+  price           Float?        @default(0)
+  currency        String?       @default("USD")
+  maxAttendees    Int?
+  currentAttendees Int          @default(0)
+  waitlistEnabled Boolean       @default(false)
+  
+  // Media and Links
+  imageUrl        String?
+  bannerUrl       String?
+  websiteUrl      String?
+  streamUrl       String?       // For virtual events
+  
+  // Requirements and Details
+  requirements    String?       @db.Text
+  agenda          Json?         // Structured agenda data
+  speakers        Json?         // Speaker information
+  
+  // Status and Visibility
+  status          EventStatus   @default(DRAFT)
+  isPublic        Boolean       @default(true)
+  requiresApproval Boolean      @default(false)
+  
+  // Metadata
+  viewCount       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  organizer       User          @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  attendees       EventAttendee[]
+  waitlist        EventWaitlist[]
+  
+  @@index([organizerId])
+  @@index([startDate])
+  @@index([type])
+  @@index([format])
+  @@index([status])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model EventAttendee {
+  id          String            @id @default(cuid())
+  eventId     String
+  userId      String
+  status      AttendeeStatus    @default(REGISTERED)
+  registeredAt DateTime         @default(now())
+  checkedInAt DateTime?
+  
+  // RSVP Details
+  rsvpResponse String?          // Optional response message
+  dietaryReqs  String?          // Dietary requirements
+  
+  // Relations
+  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId, status])
+  @@index([registeredAt])
+}
+
+model EventWaitlist {
+  id          String    @id @default(cuid())
+  eventId     String
+  userId      String
+  joinedAt    DateTime  @default(now())
+  notified    Boolean   @default(false)
+  
+  // Relations
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([joinedAt])
+}
+
+// ============================================
+// EVENT ENUMS
+// ============================================
+
+enum EventType {
+  CONFERENCE
+  MEETUP
+  WORKSHOP
+  HACKATHON
+  WEBINAR
+  NETWORKING
+  SEMINAR
+  TRAINING
+  SOCIAL
+  OTHER
+}
+
+enum EventFormat {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum EventStatus {
+  DRAFT         // Not published yet
+  PUBLISHED     // Live and accepting registrations
+  CANCELLED     // Event cancelled
+  COMPLETED     // Event finished
+  POSTPONED     // Event postponed
+}
+
+enum AttendeeStatus {
+  REGISTERED    // Registered for event
+  CHECKED_IN    // Checked in at event
+  NO_SHOW       // Registered but didn't attend
+  CANCELLED     // Cancelled registration
 }
 
 enum UserRole {

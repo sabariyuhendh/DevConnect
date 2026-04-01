@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth';
+import { protect, requireAdmin } from '../middleware/auth';
 import * as jobController from '../controllers/jobController';
 
 const router = Router();
@@ -19,11 +19,11 @@ router.post('/:id/save', jobController.toggleSaveJob);
 router.get('/my/applications', jobController.getMyApplications);
 router.get('/my/saved', jobController.getSavedJobs);
 
-// Admin routes (TODO: Add admin middleware)
-router.get('/admin/pending', jobController.getPendingJobs);
-router.post('/admin/:id/approve', jobController.approveJob);
-router.post('/admin/:id/reject', jobController.rejectJob);
-router.patch('/admin/:id/status', async (req, res, next) => {
+// Admin routes - SECURED with admin role middleware
+router.get('/admin/pending', requireAdmin, jobController.getPendingJobs);
+router.post('/admin/:id/approve', requireAdmin, jobController.approveJob);
+router.post('/admin/:id/reject', requireAdmin, jobController.rejectJob);
+router.patch('/admin/:id/status', requireAdmin, async (req, res, next) => {
   try {
     const { status } = req.body;
     if (status === 'APPROVED') {
